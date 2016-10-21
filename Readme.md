@@ -9,9 +9,14 @@ Installation
 The Bitcoin Mining Simulator has been developed and tested on Mac OS X 10.11.4.
 This software is currently setup to be run using Apple's Xcode IDE.
 
-The code for the mining simulator has no outside dependencies and is written
-in standard C++11. In the future we will release this code with a makefile
-so that it is easily compilable in the cross-platform manner.
+The code is dependent on the GNU Scientific Library (https://www.gnu.org/software/gsl/).
+The xcode project file expects the headers to be located at /usr/local/include and the
+library files to be located at /usr/local/lib so these must be updated if your
+configuration differs.
+
+The code for the mining simulator is written in standard C++14. In the future we will
+release this code with a makefile so that it is easily compilable in a
+cross-platform manner.
 
 Usage
 -----------

@@ -10,18 +10,23 @@
 #include "minerStrategies.h"
 #include "block.hpp"
 #include "miner.hpp"
+#include "minerImp.hpp"
 #include "mining_style.hpp"
+
+#include "simple_publisher.hpp"
+#include "picky_mining_style.hpp"
+#include "simple_mining_style.hpp"
 
 #include <assert.h>
 #include <iostream>
 
-Strategy::Strategy(std::string name_, MinerCreatePtr creator_) : name(name_), creator(creator_) {}
+Strategy::Strategy(std::string name_, MinerImpCreator minerImpCreator_) : minerImpCreator(minerImpCreator_), name(name_) {}
 
 std::ostream& operator<<(std::ostream& os, const Strategy& strat) {
     os << strat.name;
     return os;
 }
 
-std::unique_ptr<Miner> Strategy::generateMiner(MinerParameters params) const {
-    return creator(params, *this);
+std::unique_ptr<MinerImp> Strategy::createImp() const {
+    return minerImpCreator();
 }

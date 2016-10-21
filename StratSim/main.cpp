@@ -9,7 +9,6 @@
 #include "strategy.hpp"
 #include "block.hpp"
 #include "blockchain.hpp"
-#include "multiplicative_weights.hpp"
 #include "minerStrategies.h"
 #include "logging.h"
 #include "game.hpp"
@@ -17,8 +16,14 @@
 #include "mining_style.hpp"
 #include "miner_result.hpp"
 #include "game_result.hpp"
+#include "typeDefs.hpp"
+#include "learning_miner.hpp"
+#include "minerImp.hpp"
 
 #include <iostream>
+#include <iomanip>
+#include <stdlib.h>
+#include <sys/stat.h>
 
 //--more representative of smaller miners, where the chance that you mine the
 //next block is ~0 (not to be confused with the strategy selfish mining)
@@ -26,7 +31,7 @@
 #define NO_SELF_MINING true     //not realistic, but do not force miners to mine on top of their own blocks
 #define NOISE_IN_TRANSACTIONS false //miners don't put the max value they can into a block (simulate tx latency)
 
-#define NETWORK_DELAY BlockTime(8)         //network delay in seconds for network to hear about your block
+#define NETWORK_DELAY BlockTime(0)         //network delay in seconds for network to hear about your block
 #define EXPECTED_NUMBER_OF_BLOCKS BlockCount(10000)
 
 #define LAMBERT_COEFF 0.13533528323661//coeff for lambert func equil  must be in [0,.2]
@@ -39,135 +44,110 @@ struct RunSettings {
     BlockCount blockCount;
 };
 
-void runStratGame(RunSettings settings, MinerCount fixedDefault, MultiplicativeWeights &stratPool, bool outputWeights);
+void runStratGame(RunSettings settings, MinerCount fixedDefault, std::vector<Strategy> &strategies, Strategy defaultStrategy, std::string folderPrefix);
 
-void runStrackedStratGame(RunSettings settings);
-void runSingleStratGame(RunSettings settings, MinerCount fixedDefault);
+void runSingleStratGame(RunSettings settings, MinerCount fixedDefault, std::string folderPrefix);
 
-void runStratGame(RunSettings settings, MinerCount fixedDefault, MultiplicativeWeights &stratPool, bool outputWeights) {
+void runStratGame(RunSettings settings, MinerCount fixedDefault, std::vector<Strategy> &strategies, Strategy defaultStrategy, std::string folderPrefix) {
     
     //start running games
     BlockCount totalBlocksMined(0);
     BlockCount blocksInLongestChain(0);
     
-    for (unsigned int gameNum = 0; gameNum < settings.numberOfGames; gameNum++) {
+    std::string resultFolder = "";
+    
+    if (folderPrefix.length() > 0) {
+        resultFolder += folderPrefix + "-";
+    }
+    
+    resultFolder += std::to_string(rawCount(fixedDefault));
+    
+    char final [256];
+    sprintf (final, "./%s", resultFolder.c_str());
+    mkdir(final,0775);
+    
+    std::vector<std::unique_ptr<Miner>> miners;
+    std::vector<LearningMiner *> learningMiners;
+    
+    HashRate hashRate(1.0/rawCount(settings.totalMiners));
+    MinerCount numberRandomMiners(settings.totalMiners - fixedDefault);
+    
+    for (MinerCount i(0); i < settings.totalMiners; i++) {
+        auto minerName = std::to_string(rawCount(i));
+        MinerParameters parameters {rawCount(i), minerName, hashRate, NETWORK_DELAY, COST_PER_SEC_TO_MINE};
         
-        GAMEINFOBLOCK(
-            GAMEINFO("Current strategy weights:" << std::endl);
-            stratPool.printWeights();
-        )
-        
-        
-        MinerCount numberRandomMiners(settings.totalMiners - fixedDefault);
-        
-        std::vector<std::unique_ptr<Miner>> miners;
-        HashRate hashRate(1.0/rawCount(settings.totalMiners));
-        for (MinerCount i(0); i < settings.totalMiners; i++) {
-            auto minerName = std::to_string(rawCount(i));
-            MinerParameters parameters {rawCount(i), minerName, hashRate, NETWORK_DELAY, COST_PER_SEC_TO_MINE};
-            if (i < numberRandomMiners) {
-                const auto &strat = stratPool.pickRandomStrategy();
-                miners.push_back(strat.generateMiner(parameters));
-            } else {
-                miners.push_back(stratPool.defaultStrategy.generateMiner(parameters));
-            }
+        if (i < numberRandomMiners) {
+            auto learningMiner = std::make_unique<LearningMiner>(parameters, strategies);
+            learningMiners.push_back(learningMiner.get());
+            miners.push_back(std::unique_ptr<Miner>(std::move(learningMiner)));
+        } else {
+            miners.push_back(std::make_unique<Miner>(parameters, defaultStrategy.createImp()));
         }
-        
-        MinerGroup minerGroup(std::move(miners));
+    }
+    
+    MinerGroup minerGroup(learningMiners, std::move(miners), strategies, resultFolder);
+    
+//    double phi = std::sqrt(strategies.size() * std::log(strategies.size())) / std::sqrt(settings.numberOfGames);
+//    double phi = std::sqrt(strategies.size() * std::log(strategies.size())) / std::sqrt(settings.numberOfGames / 100);
+    
+    double phi = .01;
+    
+    for (unsigned int gameNum = 0; gameNum < settings.numberOfGames; gameNum++) {
+//        double n = gameNum;
+//        double nMax = settings.numberOfGames;
+//        double phi = std::pow(.9, (n / nMax) * 30.0);
+
+        minerGroup.writeWeights(gameNum);
+        minerGroup.updateProbabilities(phi); // Step 1
+        minerGroup.resetAndpickNewStrategies(); // Step 2
         
         GAMEINFO("\n\nGame#: " << gameNum << " The board is set, the pieces are in motion..." << std::endl);
         
         auto result = runGame(minerGroup, settings.blockCount, settings.secondsPerBlock, A);
+        
         GAMEINFO("The game is complete. Calculate the scores:" << std::endl);
         
-        if (outputWeights) {
-            //print to files the normalized weights of the strategies
-            stratPool.writeWeights(gameNum);
-        }
+        Value maxProfit = (A * (EXPECTED_NUMBER_OF_BLOCKS * settings.secondsPerBlock) - result.second.moneyLeftAtEnd) / Value(rawCount(settings.totalMiners) / 4);
         
-        //update the stratPool's weights:
-        //current version sets the weights to = fraction profits this strat/total profits
+        // Steps 3, 4, 5
+        minerGroup.updateWeights(result.second, maxProfit, phi);
         
-        stratPool.calculateNewNormalizedWeights(minerGroup, result.second.minerResults);
         totalBlocksMined += result.second.totalBlocksMined;
         blocksInLongestChain += result.second.blocksInLongestChain;
-//        std::cout << 100 * double(rawHeight(result.second.blocksInLongestChain)) / double(rawHeight(result.second.totalBlocksMined)) << "% in final chain" << std::endl;
     }
     
-    if (outputWeights) {
-        stratPool.writeWeights(settings.numberOfGames);
-    }
+    minerGroup.writeWeights(settings.numberOfGames);
     
-//    std::cout << 100 * double(rawHeight(blocksInLongestChain)) / double(rawHeight(totalBlocksMined)) << "% in final chain" << std::endl;
+    //    std::cout << 100 * double(rawHeight(blocksInLongestChain)) / double(rawHeight(totalBlocksMined)) << "% in final chain" << std::endl;
     
     GAMEINFOBLOCK(
-        GAMEINFO("Games over. Final strategy weights:\n");
-        stratPool.printWeights();
-    )
+                  GAMEINFO("Games over. Final strategy weights:\n");
+                  stratPool.printWeights();
+                  )
 }
 
-void runSingleStratGame(RunSettings settings, MinerCount fixedDefault) {
+void runSingleStratGame(RunSettings settings, MinerCount fixedDefault, std::string folderPrefix) {
     using std::placeholders::_1;
     using std::placeholders::_2;
     
+    std::vector<Strategy> strategies;
+    
     Strategy defaultStrategy = createDefaultStrategy(NO_SELF_MINING, NOISE_IN_TRANSACTIONS);
-    MultiplicativeWeights stratPool(std::to_string(rawCount(fixedDefault)), defaultStrategy, .3);
-    //initial conditions
-    
-    //    replace the below with the below below to switch to MW for selfish miners w/ different Betas
-    //    for (int i = 0; i < 5; i++) {
-    //        stratPool.addStrat({StrategyType::clever_selfish_mining, i * 0.25, NOISE_IN_TRANSACTIONS, NO_SELF_MINING}, 1);
-    //    }
-    
-    StratWeight defaultWeight(1);
-    
-    for (int i = 0; i < 8; i++) {
+
+    strategies.push_back(createPettyStrategy(NO_SELF_MINING, NOISE_IN_TRANSACTIONS));
+    for (int i = -1; i < 3; i++) {
         int funcCoeff = static_cast<int>(pow(2, (i + 1)));
         std::function<Value(const Blockchain &, Value)> forkFunc(std::bind(functionForkPercentage, _1, _2, funcCoeff));
-        stratPool.addStrat(createFunctionForkStrategy(NO_SELF_MINING, forkFunc, std::to_string(funcCoeff)), defaultWeight);
+        strategies.push_back(createFunctionForkStrategy(NO_SELF_MINING, forkFunc, std::to_string(funcCoeff)));
     }
-    stratPool.addStrat(createFunctionForkStrategy(NO_SELF_MINING, std::bind(functionForkLambert, _1, _2, LAMBERT_COEFF), "lambert"), defaultWeight);
-    stratPool.addStrat(createUndercutStrategy(NO_SELF_MINING, NOISE_IN_TRANSACTIONS), defaultWeight);
-    stratPool.addStrat(createPettyStrategy(NO_SELF_MINING, NOISE_IN_TRANSACTIONS), defaultWeight);
+//  strategies.push_back(createFunctionForkStrategy(NO_SELF_MINING, std::bind(functionForkLambert, _1, _2, LAMBERT_COEFF), "lambert"));
+    strategies.push_back(createLazyForkStrategy(NO_SELF_MINING));
     
-    runStratGame(settings, fixedDefault, stratPool, true);
-}
-
-void runStrackedStratGame(RunSettings settings) {
-    using std::placeholders::_1;
-    using std::placeholders::_2;
     
-    Strategy defaultStrategy = createDefaultStrategy(NO_SELF_MINING, NOISE_IN_TRANSACTIONS);
-    
-    MultiplicativeWeights stratPool("stackPlot", defaultStrategy, .1);
-    StratWeight defaultWeight(1);
-    
-    for (int i = -1; i < 7; i++) {
-        double funcCoeff = pow(2, -(i + 1));
-        std::function<Value(const Blockchain &, Value)> forkFunc(std::bind(functionForkPercentage, _1, _2, funcCoeff));
-        stratPool.addStrat(createFunctionForkStrategy(NO_SELF_MINING, forkFunc, std::to_string(funcCoeff)), defaultWeight);
-    }
-    stratPool.addStrat(createFunctionForkStrategy(NO_SELF_MINING, std::bind(functionForkLambert, _1, _2, LAMBERT_COEFF), "lambert"), defaultWeight);
-    stratPool.addStrat(createUndercutStrategy(NO_SELF_MINING, NOISE_IN_TRANSACTIONS), defaultWeight);
-    //    stratPool.addStrat({StrategyType::clever_fork, NOISE_IN_TRANSACTIONS, NO_SELF_MINING}, defaultWeight);
-    stratPool.addStrat(createPettyStrategy(NO_SELF_MINING, NOISE_IN_TRANSACTIONS), defaultWeight);
-    
-    std::ofstream defaultOut("stackPlot/default.txt");
-    for (MinerCount numberDefaultMiners(0); numberDefaultMiners < settings.totalMiners; numberDefaultMiners++) {
-        runStratGame(settings, numberDefaultMiners, stratPool, false);
-        stratPool.writeWeights(rawCount(numberDefaultMiners), settings.totalMiners, numberDefaultMiners);
-        
-        double defaultRatio = static_cast<double>(rawCount(numberDefaultMiners)) / rawCount(settings.totalMiners);
-        defaultOut << rawCount(numberDefaultMiners) << " " << defaultRatio << std::endl;
-        stratPool.resetWeights();
-    }
+    runStratGame(settings, fixedDefault, strategies, defaultStrategy, folderPrefix);
 }
 
 int main(int, const char * []) {
-//    for (MinerCount i(17); i < MinerCount(20); i++) {
-//        runSingleStratGame(i);
-//    }
-    runSingleStratGame({20000, MinerCount(20000), SEC_PER_BLOCK, EXPECTED_NUMBER_OF_BLOCKS}, MinerCount(0));
-//    runSingleStratGame();
-//    runStrackedStratGame();
+    runSingleStratGame({400000, MinerCount(200), SEC_PER_BLOCK, EXPECTED_NUMBER_OF_BLOCKS}, MinerCount(0),"test");
+    
 }

@@ -20,8 +20,9 @@ struct GameResult {
     std::map<const Miner *, MinerResult> minerResults;
     BlockCount totalBlocksMined;
     BlockCount blocksInLongestChain;
+    Value moneyLeftAtEnd;
     
-    GameResult(std::map<const Miner *, MinerResult> minerResults, BlockCount totalBlocksMined, BlockCount blocksInLongestChain);
+    GameResult(std::map<const Miner *, MinerResult> minerResults, BlockCount totalBlocksMined, BlockCount blocksInLongestChain, Value moneyLeftAtEnd);
 };
 
 #endif /* game_result_hpp */

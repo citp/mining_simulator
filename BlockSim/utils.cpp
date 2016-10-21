@@ -18,7 +18,7 @@ inline std::mt19937& getGen() {
     return gen;
 }
 
-Value calculateMoneyLeftInNetwork(Value valueNetworkTotal, const Block &block) {
+Value getRem(Value valueNetworkTotal, const Block &block) {
     return valueNetworkTotal + block.valueCreatedInChain - block.valueInChain;
 }
 

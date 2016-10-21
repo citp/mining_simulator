@@ -6,7 +6,7 @@
 //  Copyright © 2016 Harry Kalodner. All rights reserved.
 //
 
-#include "clevel_selfish_miner.hpp"
+#include "clever_selfish_miner.hpp"
 
 #include "block.hpp"
 #include "blockchain.hpp"
@@ -16,6 +16,7 @@
 #include "default_miner.hpp"
 #include "mining_style.hpp"
 #include "strategy.hpp"
+#include "minerImp.hpp"
 
 #include <assert.h>
 #include <iostream>
@@ -26,9 +27,11 @@ using std::placeholders::_2;
 Strategy createCleverSelfishStrategy(bool noiseInTransactions, Value cutoff) {
     auto valueFunc = std::bind(defaultValueInMinedChild, _1, _2, noiseInTransactions);
     
-    auto defaultCreator = [=](MinerParameters params, const Strategy &strat) { return std::make_unique<Miner>(params, strat, selfishBlockToMineOn, valueFunc, std::make_unique<CleverSelfishPublishingStyle>(cutoff)); };
+    auto impCreator = [=]() {
+        return std::make_unique<MinerImp>(selfishBlockToMineOn, valueFunc, std::make_unique<CleverSelfishPublishingStyle>(cutoff));
+    };
     
-    return {"clever-selfish", defaultCreator};
+    return {"clever-selfish", impCreator};
 }
 
 CleverSelfishPublishingStyle::CleverSelfishPublishingStyle(Value cutoff_) : SelfishPublishingStyle(), cutoff(cutoff_) {}

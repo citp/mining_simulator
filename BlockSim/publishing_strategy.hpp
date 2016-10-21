@@ -33,6 +33,7 @@ public:
     std::vector<std::unique_ptr<MinedBlock>> publish(const Blockchain &blockchain, const Miner &me);
     
     virtual ~PublishingStrategy();
+    virtual void initialize(const Blockchain &, const Miner &);
     virtual BlockTime nextPublishingTime() const = 0;
     virtual void addNewBlock(std::unique_ptr<MinedBlock> block) = 0;
 };

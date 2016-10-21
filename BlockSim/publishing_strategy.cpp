@@ -34,3 +34,7 @@ std::vector<std::unique_ptr<MinedBlock>> PublishingStrategy::publish(const Block
 BlockTime PublishingStrategy::getTimeReached() const {
     return publishingTimeReached;
 }
+
+void PublishingStrategy::initialize(const Blockchain &, const Miner &) {
+    publishingTimeReached = BlockTime(0);
+}

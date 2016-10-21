@@ -11,12 +11,15 @@
 
 #include "mining_style.hpp"
 
+using ShouldMineFunc = std::function<bool(const Miner &, const Blockchain &, const MinedBlock &)>;
+
 class PickyMiningStyle : public MiningStyle {
     
 private:
     ShouldMineFunc shouldMineFunc;
     Value totalMiningCost;
     
+    void initialize(const Blockchain &blockchain, const Miner &miner) override;
     BlockTime nextMiningTime() const override;
     Value moneySpentMining(const Miner &miner) const override;
     std::unique_ptr<MinedBlock> attemptToMineImp(const Blockchain &blockchain, Miner &me) override;

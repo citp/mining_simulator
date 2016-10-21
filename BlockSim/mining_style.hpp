@@ -11,7 +11,7 @@
 
 #include "typeDefs.hpp"
 #include "minerParameters.h"
-#include "miner.hpp"
+#include "strategy.hpp"
 
 #include <functional>
 
@@ -19,13 +19,16 @@ class MinedBlock;
 class Blockchain;
 class Miner;
 
+using ParentSelectorFunc = std::function<Block &(const Miner &, const Blockchain &)>;
+using BlockValueFunc = std::function<Value(const Blockchain &, const Block &)>;
+
 class MiningStyle {
 
 private:
-    BlockTime _miningTimeReached;
     ParentSelectorFunc parentSelectorFunc;
     BlockValueFunc blockValueFunc;
     
+    BlockTime _miningTimeReached;
     virtual std::unique_ptr<MinedBlock> attemptToMineImp(const Blockchain &blockchain, Miner &miner) = 0;
     
 protected:
@@ -39,7 +42,7 @@ public:
     
     virtual ~MiningStyle();
     
-    virtual void initialize(const Blockchain &, const Miner &) {}
+    virtual void initialize(const Blockchain &, const Miner &);
     std::unique_ptr<MinedBlock> attemptToMine(const Blockchain &blockchain, Miner *miner);
     virtual BlockTime nextMiningTime() const = 0;
     virtual Value moneySpentMining(const Miner &miner) const = 0;

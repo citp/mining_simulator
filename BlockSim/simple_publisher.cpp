@@ -28,3 +28,9 @@ void SimplePublisher::addNewBlock(std::unique_ptr<MinedBlock> block) {
     unpublishedBlock = std::move(block);
     _nextPublish = unpublishedBlock->timeMined;
 }
+
+void SimplePublisher::initialize(const Blockchain &blockchain, const Miner &miner) {
+    PublishingStrategy::initialize(blockchain, miner);
+    _nextPublish = BlockTime(0);
+    unpublishedBlock = nullptr;
+}

@@ -24,6 +24,7 @@ private:
     BlockTime nextMiningTime() const override;
     Value moneySpentMining(const Miner &miner) const override;
     
+    
 public:
     SimpleMiningStyle(ParentSelectorFunc parentSelectorFunc_, BlockValueFunc blockValueFunc_) : MiningStyle(parentSelectorFunc_, blockValueFunc_), _hasInitializedTime(false) {}
     virtual ~SimpleMiningStyle() = default;

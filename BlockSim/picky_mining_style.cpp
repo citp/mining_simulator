@@ -10,9 +10,15 @@
 #include "utils.hpp"
 #include "blockchain.hpp"
 #include "block.hpp"
+#include "miner.hpp"
 
 #include <assert.h>
 #include <cmath>
+
+void PickyMiningStyle::initialize(const Blockchain &blockchain, const Miner &miner) {
+    MiningStyle::initialize(blockchain, miner);
+    totalMiningCost = Value(0);
+}
 
 Value PickyMiningStyle::moneySpentMining(const Miner &) const {
     return totalMiningCost;

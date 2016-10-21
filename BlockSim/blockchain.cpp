@@ -42,6 +42,7 @@ const std::vector<Block *> &Blockchain::getOldHeads() const {
 }
 
 void Blockchain::newBlockAdded(Block *block) {
+    assert(block->height <= _maxHeightPub + BlockHeight(1));
     if (block->height > _maxHeightPub) {
         _maxHeightPub = block->height;
         _smallestBlocks.push_back({block});
@@ -54,7 +55,6 @@ void Blockchain::newBlockAdded(Block *block) {
             _smallestBlocks[height].push_back(block);
         }
     }
-    
 }
 
 void Blockchain::publishBlock(std::unique_ptr<MinedBlock> block) {
@@ -172,7 +172,7 @@ Block &Blockchain::oldestPublishedHead() const {
     return *possiblities[selectRandomIndex(possiblities.size())];
 }
 
-Block &Blockchain::smallestPublishedHead(BlockHeight age) const {
+Block &Blockchain::smallestHead(BlockHeight age) const {
     size_t height = rawHeight(getMaxHeightPub() - age);
     Block *block = _smallestBlocks[height][selectRandomIndex(_smallestBlocks[height].size())];
     return *block;

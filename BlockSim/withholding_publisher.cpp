@@ -42,3 +42,8 @@ std::vector<std::unique_ptr<MinedBlock>> WithholdingPublisher::publishBlocks(con
     std::sort(begin(blocksToPublish), end(blocksToPublish), [](const std::unique_ptr<MinedBlock> &a, const std::unique_ptr<MinedBlock> &b) { return a->height < b->height; });
     return blocksToPublish;
 }
+
+void WithholdingPublisher::initialize(const Blockchain &blockchain, const Miner &miner) {
+    PublishingStrategy::initialize(blockchain, miner);
+    unpublishedBlocks.clear();
+}

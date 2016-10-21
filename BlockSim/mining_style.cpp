@@ -15,9 +15,13 @@
 #include <assert.h>
 
 MiningStyle::MiningStyle(ParentSelectorFunc parentSelectorFunc_, BlockValueFunc blockValueFunc_) :
-    _miningTimeReached(BlockTime(0)), parentSelectorFunc(parentSelectorFunc_), blockValueFunc(blockValueFunc_) {}
+parentSelectorFunc(parentSelectorFunc_), blockValueFunc(blockValueFunc_), _miningTimeReached(BlockTime(0)) {}
 
 MiningStyle::~MiningStyle() = default;
+
+void MiningStyle::initialize(const Blockchain &, const Miner &) {
+    _miningTimeReached = BlockTime(0);
+}
 
 
 std::unique_ptr<MinedBlock> MiningStyle::attemptToMine(const Blockchain &blockchain, Miner *miner) {
@@ -40,5 +44,9 @@ std::unique_ptr<MinedBlock> MiningStyle::createBlock(const Blockchain &blockchai
     auto &parent = parentSelectorFunc(miner, blockchain);
     auto value = blockValueFunc(blockchain, parent);
     
-    return std::make_unique<MinedBlock>(parent, miner, blockchain.getTime(), value);
+    auto newBlock = std::make_unique<MinedBlock>(parent, miner, blockchain.getTime(), value);
+    
+    assert(newBlock->height <= blockchain.getMaxHeightPub() + BlockHeight(20));
+    
+    return newBlock;
 }

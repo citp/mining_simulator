@@ -10,6 +10,7 @@
 #include "blockchain.hpp"
 #include "utils.hpp"
 #include "block.hpp"
+#include "miner.hpp"
 
 #include <assert.h>
 #include <cmath>
@@ -25,6 +26,7 @@ std::unique_ptr<MinedBlock> SimpleMiningStyle::attemptToMineImp(const Blockchain
 }
 
 void SimpleMiningStyle::initialize(const Blockchain &blockchain, const Miner &miner) {
+    MiningStyle::initialize(blockchain, miner);
     _nextBlockTime = generateNewMiningTime(blockchain, miner);
     _hasInitializedTime = true;
 }

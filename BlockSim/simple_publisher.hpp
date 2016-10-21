@@ -14,9 +14,7 @@
 class SimplePublisher : public PublishingStrategy {
     
 private:
-    
     BlockTime _nextPublish;
-    
     std::unique_ptr<MinedBlock> unpublishedBlock;
     
     inline BlockTime nextPublishingTime() const override {
@@ -28,6 +26,7 @@ private:
     void addNewBlock(std::unique_ptr<MinedBlock> block) override;
 public:
     SimplePublisher();
+    void initialize(const Blockchain &blockchain, const Miner &miner) override;
 };
 
 #endif /* simple_publisher_hpp */

@@ -15,6 +15,7 @@
 #include "publishing_strategy.hpp"
 #include "mining_style.hpp"
 #include "strategy.hpp"
+#include "minerImp.hpp"
 
 #include <iostream>
 #include <cmath>
@@ -27,9 +28,11 @@ Strategy createDefaultStrategy(bool noSelfMining, bool noiseInTransactions) {
     auto mineFunc = std::bind(defaultBlockToMineOn, _1, _2, noSelfMining);
     auto valueFunc = std::bind(defaultValueInMinedChild, _1, _2, noiseInTransactions);
     
-    auto defaultCreator = [=](MinerParameters params, const Strategy &strat) { return std::make_unique<Miner>(params, strat, mineFunc, valueFunc); };
+    auto impCreator = [=]() {
+        return std::make_unique<MinerImp>(mineFunc, valueFunc);
+    };
     
-    return {"default-honest", defaultCreator};
+    return {"default-honest", impCreator};
 }
 
 Block &defaultBlockToMineOn(const Miner &me, const Blockchain &blockchain, bool noSelfMining) {
@@ -43,7 +46,7 @@ Block &defaultBlockToMineOn(const Miner &me, const Blockchain &blockchain, bool 
 
 Value defaultValueInMinedChild(const Blockchain &blockchain, const Block &mineHere, bool noiseInTransactions) {
     auto minVal = mineHere.nextBlockReward;
-    auto maxVal = calculateMoneyLeftInNetwork(blockchain.getValueNetworkTotal(), mineHere) + mineHere.nextBlockReward;
+    auto maxVal = getRem(blockchain.getTotalFees(), mineHere) + mineHere.nextBlockReward;
     //this represents some noise-- no noise, value would = valueMax
     //value = ((valueMax - valueMin)*((dis(gen)+.7)/1.7)) + valueMin;
     auto value = maxVal;

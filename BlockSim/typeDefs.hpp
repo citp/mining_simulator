@@ -16,7 +16,7 @@ typedef unsigned int CountType;
 typedef double RateType;
 typedef double WeightType;
 
-//#define DEBUG_TYPES
+#define DEBUG_TYPES
 
 #ifdef DEBUG_TYPES
 

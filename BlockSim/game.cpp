@@ -26,6 +26,7 @@ std::pair<std::unique_ptr<Blockchain>, GameResult> runGame(MinerGroup &minerGrou
     auto blockchain = std::make_unique<Blockchain>(secondsPerBlock, transactionFeeRate);
     
     minerGroup.initialize(*blockchain);
+    minerGroup.resetOrder();
     
     GAMEINFO("Players:" << std::endl << minerGroup);
     
@@ -67,13 +68,19 @@ std::pair<std::unique_ptr<Blockchain>, GameResult> runGame(MinerGroup &minerGrou
     }
     
     auto winningChain = blockchain->winningHead().getChain();
+    int parentCount = 0;
     for (auto block : winningChain) {
+        
         auto minedBlock = dynamic_cast<const MinedBlock *>(&block.get());
         if (minedBlock) {
+            if (minedBlock->parent.minedBy(minedBlock->miner)) {
+                parentCount++;
+            }
             minerResults[&minedBlock->miner].addBlock(minedBlock);
         }
     }
     
+//    std::cout << parentCount << " block mined over parent" << std::endl;
     
     
     //calculate the score at the end
@@ -86,7 +93,9 @@ std::pair<std::unique_ptr<Blockchain>, GameResult> runGame(MinerGroup &minerGrou
         finalBlocks += minerResults[miner.get()].blocksInWinningChain;
     }
     
-    GameResult result(minerResults, totalBlocks, finalBlocks);
+    Value moneyLeftAtEnd = getRem(blockchain->getTotalFees(), winningChain[0]);
+    
+    GameResult result(minerResults, totalBlocks, finalBlocks, moneyLeftAtEnd);
     
     GAMEINFO("Total blocks mined:" << totalBlocks << " with " << finalBlocks << " making it into the final chain" << std::endl);
     

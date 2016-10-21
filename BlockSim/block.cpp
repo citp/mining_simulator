@@ -28,6 +28,7 @@ MinedBlock::MinedBlock(Block &parent_, const Miner &miner_, BlockTime timeSecond
     parent(parent_), miner(miner_) {}
 
 void Block::addChild(std::unique_ptr<Block> block) {
+    assert(block.get() != NULL);
     
     if (_smallestChildren.empty()) {
         _smallestChildren.push_back(block.get());

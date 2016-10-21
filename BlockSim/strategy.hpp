@@ -15,23 +15,28 @@
 #include <memory>
 #include <string>
 
+class Block;
+class MinedBlock;
+class Blockchain;
+class MiningStyle;
+class PublishingStrategy;
 class Miner;
-struct MinerParameters;
-class Strategy;
+class MinerImp;
 
-typedef std::function<std::unique_ptr<Miner>(MinerParameters, const Strategy &)>  MinerCreatePtr;
+typedef std::function<std::unique_ptr<MinerImp>()> MinerImpCreator;
+
 
 class Strategy {
-    
+private:
+    const MinerImpCreator minerImpCreator;
+
 public:
     const std::string name;
-    const MinerCreatePtr creator;
     
-    Strategy(std::string name, MinerCreatePtr creator);
-    
-    std::unique_ptr<Miner> generateMiner(MinerParameters params) const;
-
+    Strategy(std::string name, MinerImpCreator minerImpCreator);
     friend std::ostream& operator<<(std::ostream& os, const Strategy& strat);
+    
+    std::unique_ptr<MinerImp> createImp() const;
 };
 
 #endif /* strategy_hpp */

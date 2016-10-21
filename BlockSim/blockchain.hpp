@@ -14,10 +14,11 @@
 #include <queue>
 
 class Block;
+class GenesisBlock;
 class MinedBlock;
 
 class Blockchain {
-    const std::unique_ptr<Block> genesis;
+    const std::unique_ptr<GenesisBlock> genesis;
     
     std::vector<Block *> oldHeads;
     std::deque<Block *> heads;
@@ -50,7 +51,7 @@ public:
     
     const std::vector<Block *> oldestPublishedHeads() const;
     Block &oldestPublishedHead() const;
-    Block &smallestPublishedHead(BlockHeight age) const;
+    Block &smallestHead(BlockHeight age) const;
     
     void tick(BlockTime timePassed);
     void advanceToTime(BlockTime time);
@@ -63,7 +64,7 @@ public:
         return timeInSecs;
     }
     
-    inline Value getValueNetworkTotal() const {
+    inline Value getTotalFees() const {
         return valueNetworkTotal;
     }
     

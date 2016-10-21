@@ -15,6 +15,7 @@
 #include "publishing_strategy.hpp"
 #include "mining_style.hpp"
 #include "strategy.hpp"
+#include "minerImp.hpp"
 
 #include <gsl/gsl_sf_lambert.h>
 
@@ -32,13 +33,15 @@ Strategy createFunctionForkStrategy(bool noSelfMining, FunctionForkFunc function
     auto mineFunc = std::bind(blockToMineOn, _1, _2, noSelfMining, functionForkFunc);
     auto valueFunc = std::bind(valueInMinedChild, _1, _2, functionForkFunc);
     
-    auto defaultCreator = [=](MinerParameters params, const Strategy &strat) { return std::make_unique<Miner>(params, strat, mineFunc, valueFunc); };
+    auto impCreator = [=]() {
+        return std::make_unique<MinerImp>(mineFunc, valueFunc);
+    };
     
-    return {"function-fork-" + type, defaultCreator};
+    return {"function-fork-" + type, impCreator};
 }
 
 Value valueInMinedChild(const Blockchain &blockchain, const Block &block, FunctionForkFunc functionForkFunc) {
-    auto moneyLeftInNetwork = calculateMoneyLeftInNetwork(blockchain.getValueNetworkTotal(), block);
+    auto moneyLeftInNetwork = getRem(blockchain.getTotalFees(), block);
     auto value = functionForkFunc(blockchain, moneyLeftInNetwork) + block.nextBlockReward;
     
     auto childWithMinValue = block.smallestChild();
@@ -51,16 +54,19 @@ Value valueInMinedChild(const Blockchain &blockchain, const Block &block, Functi
 
 Block &blockToMineOn(const Miner &me, const Blockchain &blockchain, bool noSelfMining, FunctionForkFunc functionForkFunc) {
     auto block = me.getLastMinedBlock();
-    if (!noSelfMining && block && block->get().height >= blockchain.getMaxHeightPub()) {
+    
+    BlockHeight maxPubHeight(blockchain.getMaxHeightPub());
+    
+    if (!noSelfMining && block && block->get().height >= maxPubHeight) {
         return *block;
     } else {
-        auto &mineHere = blockchain.smallestPublishedHead(BlockHeight(0));
+        auto &mineHere = blockchain.smallestHead(BlockHeight(0));
         
         if (mineHere.height == BlockHeight(0)) {
             return mineHere;
         }
         
-        auto &mineHereFork = blockchain.smallestPublishedHead(BlockHeight(1));
+        auto &mineHereFork = blockchain.smallestHead(BlockHeight(1));
         auto *childWithMinValue = mineHereFork.smallestChild();
         
         auto valueHere = valueInMinedChild(blockchain, mineHere, functionForkFunc);

@@ -10,7 +10,9 @@
 #define miner_hpp
 
 #include "minerParameters.h"
+#include "strategy.hpp"
 
+#include <fstream>
 #include <queue>
 #include <functional>
 #include <experimental/optional>
@@ -25,34 +27,26 @@ class Blockchain;
 class MiningStyle;
 class PublishingStrategy;
 class Miner;
+class MinerImp;
 
-using ParentSelectorFunc = std::function<Block &(const Miner &, const Blockchain &)>;
-using BlockValueFunc = std::function<Value(const Blockchain &, const Block &)>;
-using ShouldMineFunc = std::function<bool(const Miner &, const Blockchain &, const MinedBlock &)>;
-
-class Miner final {
+class Miner {
 
 private:
     BlockCount blocksMinedTotal;
     std::deque<std::unique_ptr<MinedBlock>> waitingToPublishQueue;
+    std::unique_ptr<MinerImp> implementation;
     optional<std::reference_wrapper<MinedBlock>> _lastMinedBlock;
-
-    bool findsBlock(const Blockchain &blockchain);
     
-    std::unique_ptr<MiningStyle> miningStyle;
-    std::unique_ptr<PublishingStrategy> publisher;
+    bool findsBlock(const Blockchain &blockchain);
+protected:
+    void changeImplementation(std::unique_ptr<MinerImp> implementation);
+    virtual void print(std::ostream& where) const;
 public:
     const MinerParameters params;
-    const Strategy &strat;
     
+    Miner(MinerParameters parameters, std::unique_ptr<MinerImp> implementation);
+    virtual ~Miner();
     
-    Miner(MinerParameters parameters, const Strategy &strat, ParentSelectorFunc parentSelectorFunc, BlockValueFunc blockValueFunc);
-    Miner(MinerParameters parameters, const Strategy &strat, ParentSelectorFunc parentSelectorFunc, BlockValueFunc blockValueFunc, ShouldMineFunc shouldMineFunc);
-    
-    Miner(MinerParameters parameters_, const Strategy &strat, ParentSelectorFunc parentSelectorFunc_, BlockValueFunc blockValueFunc_, ShouldMineFunc shouldMineFunc_, std::unique_ptr<PublishingStrategy> publisher_);
-    Miner(MinerParameters parameters, const Strategy &strat, ParentSelectorFunc parentSelectorFunc, BlockValueFunc blockValueFunc, std::unique_ptr<PublishingStrategy> publisher);
-    
-    Miner(MinerParameters parameters_, const Strategy &strat, std::unique_ptr<MiningStyle> miningStyle_, std::unique_ptr<PublishingStrategy> publisher_);
     void initialize(const Blockchain &blockchain);
     
     BlockCount getBlocksMinedTotal() const { return blocksMinedTotal; }
@@ -63,9 +57,12 @@ public:
     void publishPhase(Blockchain &blockchain);
     void miningPhase(const Blockchain &blockchain);
     
-    optional<std::reference_wrapper<MinedBlock>> getLastMinedBlock() const { return _lastMinedBlock; }
+    optional<std::reference_wrapper<MinedBlock>> getLastMinedBlock() const {
+        
+        return _lastMinedBlock;
+    }
     
-    friend std::ostream& operator<<(std::ostream& os, const Miner& miner);
+     friend std::ostream& operator<<(std::ostream& os, const Miner& miner);
 };
 
 bool ownBlock(const Miner &miner, const Block &block);

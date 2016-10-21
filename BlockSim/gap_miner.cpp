@@ -17,6 +17,7 @@
 #include "publishing_strategy.hpp"
 #include "mining_style.hpp"
 #include "strategy.hpp"
+#include "minerImp.hpp"
 
 #include <cmath>
 #include <iostream>
@@ -31,9 +32,11 @@ Strategy createGapStrategy(bool noSelfMining, bool noiseInTransactions) {
     auto mineFunc = std::bind(defaultBlockToMineOn, _1, _2, noSelfMining);
     auto valueFunc = std::bind(defaultValueInMinedChild, _1, _2, noiseInTransactions);
     
-    auto defaultCreator = [=](MinerParameters params, const Strategy &strat) { return std::make_unique<Miner>(params, strat, mineFunc, valueFunc, shouldMine); };
+    auto impCreator = [=]() {
+        return std::make_unique<MinerImp>(mineFunc, valueFunc, shouldMine);
+    };
     
-    return {"gap", defaultCreator};
+    return {"gap", impCreator};
 }
 
 bool shouldMine(const Miner &me, const Blockchain &blockchain, const MinedBlock &block) {

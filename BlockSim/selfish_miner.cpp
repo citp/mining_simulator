@@ -14,6 +14,7 @@
 #include "default_miner.hpp"
 #include "mining_style.hpp"
 #include "strategy.hpp"
+#include "minerImp.hpp"
 
 #include <cmath>
 #include <iostream>
@@ -25,9 +26,11 @@ using std::placeholders::_2;
 Strategy createSelfishStrategy(bool noiseInTransactions) {
     auto valueFunc = std::bind(defaultValueInMinedChild, _1, _2, noiseInTransactions);
     
-    auto defaultCreator = [=](MinerParameters params, const Strategy &strat) { return std::make_unique<Miner>(params, strat, selfishBlockToMineOn, valueFunc, std::make_unique<SelfishPublishingStyle>()); };
+    auto impCreator = [=]() {
+        return std::make_unique<MinerImp>(selfishBlockToMineOn, valueFunc, std::make_unique<SelfishPublishingStyle>());
+    };
     
-    return {"selfish", defaultCreator};
+    return {"selfish", impCreator};
 }
 
 Block &selfishBlockToMineOn(const Miner &me, const Blockchain &blockchain) {

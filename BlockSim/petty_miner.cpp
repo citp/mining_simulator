@@ -16,6 +16,7 @@
 #include "publishing_strategy.hpp"
 #include "mining_style.hpp"
 #include "strategy.hpp"
+#include "minerImp.hpp"
 
 #include <iostream>
 #include <cassert>
@@ -29,9 +30,11 @@ Strategy createPettyStrategy(bool noSelfMining, bool noiseInTransactions) {
     auto mineFunc = std::bind(blockToMineOn, _1, _2, noSelfMining);
     auto valueFunc = std::bind(defaultValueInMinedChild, _1, _2, noiseInTransactions);
     
-    auto defaultCreator = [=](MinerParameters params, const Strategy &strat) { return std::make_unique<Miner>(params, strat, mineFunc, valueFunc); };
+    auto impCreator = [=]() {
+        return std::make_unique<MinerImp>(mineFunc, valueFunc);
+    };
     
-    return {"petty-honest", defaultCreator};
+    return {"petty-honest", impCreator};
 }
 
 Block &blockToMineOn(const Miner &me, const Blockchain &blockchain, bool noSelfMining) {
@@ -39,6 +42,6 @@ Block &blockToMineOn(const Miner &me, const Blockchain &blockchain, bool noSelfM
     if (!noSelfMining && block && block->get().height >= blockchain.getMaxHeightPub()) {
         return *block;
     } else {
-        return blockchain.smallestPublishedHead(BlockHeight(0));
+        return blockchain.smallestHead(BlockHeight(0));
     }
 }

@@ -11,13 +11,8 @@
 
 #include <memory>
 
-class Miner;
-class Blockchain;
-class Block;
 class Strategy;
 
-Strategy createUndercutStrategy(bool noSelfMining, bool noiseInTransactions);
-
-Block &undercutblockToMineOn(const Miner &me, const Blockchain &blockchain, bool noSelfMining);
+Strategy createLazyForkStrategy(bool noSelfMining);
 
 #endif /* undercut_miner_hpp */

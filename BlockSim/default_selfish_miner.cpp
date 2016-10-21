@@ -16,6 +16,7 @@
 #include "utils.hpp"
 #include "mining_style.hpp"
 #include "strategy.hpp"
+#include "minerImp.hpp"
 
 #include <iostream>
 
@@ -28,9 +29,11 @@ Strategy createDefaultSelfishStrategy(bool noiseInTransactions, double gamma) {
     auto mineFunc = std::bind(blockToMineOn, _1, _2, gamma);
     auto valueFunc = std::bind(defaultValueInMinedChild, _1, _2, noiseInTransactions);
     
-    auto defaultCreator = [=](MinerParameters params, const Strategy &strat) { return std::make_unique<Miner>(params, strat, mineFunc, valueFunc); };
+    auto impCreator = [=]() {
+        return std::make_unique<MinerImp>(mineFunc, valueFunc);
+    };
     
-    return {"default-selfish", defaultCreator};
+    return {"default-selfish", impCreator};
 }
 
 Block &blockToMineOn(const Miner &me, const Blockchain &blockchain, double gamma) {

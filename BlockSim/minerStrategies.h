@@ -13,9 +13,8 @@
 #include "petty_miner.hpp"
 #include "function_fork_miner.hpp"
 #include "selfish_miner.hpp"
-#include "clevel_selfish_miner.hpp"
-#include "clever_miner.hpp"
-#include "undercut_miner.hpp"
+#include "clever_selfish_miner.hpp"
+#include "lazy_fork_miner.hpp"
 #include "gap_miner.hpp"
 #include "default_selfish_miner.hpp"
 

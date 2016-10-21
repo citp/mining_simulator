@@ -27,6 +27,7 @@ private:
 public:
     WithholdingPublisher() : PublishingStrategy() {}
     virtual ~WithholdingPublisher() = default;
+    void initialize(const Blockchain &blockchain, const Miner &miner) override;
 };
 
 #endif /* withholding_publisher_hpp */
