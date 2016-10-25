@@ -33,14 +33,8 @@ Strategy createSelfishStrategy(bool noiseInTransactions) {
     return {"selfish", impCreator};
 }
 
-Block &selfishBlockToMineOn(const Miner &me, const Blockchain &blockchain) {
-    auto block = me.getLastMinedBlock();
-    if (block && block->get().height >= blockchain.getMaxHeightPub()) {
-        return *block;
-    } else {
-        return blockchain.oldestPublishedHead();
-    }
-}
+Block &selfishBlockToMineOn(const Miner &me, const Blockchain &chain) {
+    return chain.oldest(BlockHeight(0), me);}
 
 SelfishPublishingStyle::SelfishPublishingStyle() : PublishingStrategy() {}
 

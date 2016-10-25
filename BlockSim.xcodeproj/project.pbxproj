@@ -63,6 +63,9 @@
 		57DCB2861D067D9F006C59E0 /* block.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 57EB9B0B1CF663B1001244AF /* block.cpp */; };
 		57DCB2871D067D9F006C59E0 /* blockchain.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 57EB9B0E1CF6667B001244AF /* blockchain.cpp */; };
 		57DCB2891D067D9F006C59E0 /* game.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 57DCB26B1D067BC9006C59E0 /* game.cpp */; };
+		57EF09261DBDC22500C31A35 /* learning_model.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 57EF09241DBDC22500C31A35 /* learning_model.cpp */; };
+		57EF09291DBDC33800C31A35 /* exp3_learning_model.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 57EF09271DBDC33800C31A35 /* exp3_learning_model.cpp */; };
+		57EF092C1DBDC77100C31A35 /* multiplicative_weights_learning_model.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 57EF092A1DBDC77100C31A35 /* multiplicative_weights_learning_model.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -149,6 +152,12 @@
 		57EB9B2B1CF69F02001244AF /* gap_miner.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = gap_miner.cpp; sourceTree = "<group>"; };
 		57EB9B2C1CF69F02001244AF /* gap_miner.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = gap_miner.hpp; sourceTree = "<group>"; };
 		57EB9B2E1CF6A636001244AF /* minerStrategies.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = minerStrategies.h; sourceTree = "<group>"; };
+		57EF09241DBDC22500C31A35 /* learning_model.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = learning_model.cpp; sourceTree = "<group>"; };
+		57EF09251DBDC22500C31A35 /* learning_model.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = learning_model.hpp; sourceTree = "<group>"; };
+		57EF09271DBDC33800C31A35 /* exp3_learning_model.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = exp3_learning_model.cpp; sourceTree = "<group>"; };
+		57EF09281DBDC33800C31A35 /* exp3_learning_model.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = exp3_learning_model.hpp; sourceTree = "<group>"; };
+		57EF092A1DBDC77100C31A35 /* multiplicative_weights_learning_model.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = multiplicative_weights_learning_model.cpp; sourceTree = "<group>"; };
+		57EF092B1DBDC77100C31A35 /* multiplicative_weights_learning_model.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = multiplicative_weights_learning_model.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -255,6 +264,7 @@
 				57EB9B0E1CF6667B001244AF /* blockchain.cpp */,
 				57B9326E1D09FAE3005D2F69 /* minerGroup.hpp */,
 				57B9326D1D09FAE3005D2F69 /* minerGroup.cpp */,
+				57EF092D1DBE454900C31A35 /* Learning Model */,
 				579025A01D179AD2002DDF46 /* publisherQueue.hpp */,
 				5790259F1D179AD2002DDF46 /* publisherQueue.cpp */,
 				5790259C1D15E126002DDF46 /* miner_result.hpp */,
@@ -291,6 +301,19 @@
 				57DCB24C1D06351C006C59E0 /* default_selfish_miner.cpp */,
 			);
 			name = Miners;
+			sourceTree = "<group>";
+		};
+		57EF092D1DBE454900C31A35 /* Learning Model */ = {
+			isa = PBXGroup;
+			children = (
+				57EF09251DBDC22500C31A35 /* learning_model.hpp */,
+				57EF09241DBDC22500C31A35 /* learning_model.cpp */,
+				57EF09281DBDC33800C31A35 /* exp3_learning_model.hpp */,
+				57EF09271DBDC33800C31A35 /* exp3_learning_model.cpp */,
+				57EF092B1DBDC77100C31A35 /* multiplicative_weights_learning_model.hpp */,
+				57EF092A1DBDC77100C31A35 /* multiplicative_weights_learning_model.cpp */,
+			);
+			name = "Learning Model";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -388,16 +411,19 @@
 				57DCB2671D067B79006C59E0 /* clever_selfish_miner.cpp in Sources */,
 				57B9327B1D0CF1E6005D2F69 /* publishing_strategy.cpp in Sources */,
 				576CFACD1D0CF94500360E74 /* simple_publisher.cpp in Sources */,
+				57EF09291DBDC33800C31A35 /* exp3_learning_model.cpp in Sources */,
 				57DCB2681D067B79006C59E0 /* block.cpp in Sources */,
 				57151B081D11A7250044E18D /* typeDefs.cpp in Sources */,
 				57B9326F1D09FAE3005D2F69 /* minerGroup.cpp in Sources */,
 				57DCB2691D067B79006C59E0 /* blockchain.cpp in Sources */,
+				57EF09261DBDC22500C31A35 /* learning_model.cpp in Sources */,
 				579025A11D179AD2002DDF46 /* publisherQueue.cpp in Sources */,
 				5790259D1D15E126002DDF46 /* miner_result.cpp in Sources */,
 				57DCB26E1D067BC9006C59E0 /* game.cpp in Sources */,
 				573619501DB54F7E00802365 /* learning_miner.cpp in Sources */,
 				576CFAD71D0D029000360E74 /* simple_mining_style.cpp in Sources */,
 				57DCB2581D067A9B006C59E0 /* main.cpp in Sources */,
+				57EF092C1DBDC77100C31A35 /* multiplicative_weights_learning_model.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -557,10 +583,7 @@
 				GCC_WARN_UNUSED_LABEL = YES;
 				GCC_WARN_UNUSED_PARAMETER = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = (
-					/usr/local/include,
-					/usr/local/include/boost,
-				);
+				HEADER_SEARCH_PATHS = /usr/local/include;
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				MTL_ENABLE_DEBUG_INFO = YES;
@@ -646,10 +669,7 @@
 				GCC_WARN_UNUSED_LABEL = YES;
 				GCC_WARN_UNUSED_PARAMETER = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = (
-					/usr/local/include,
-					/usr/local/include/boost,
-				);
+				HEADER_SEARCH_PATHS = /usr/local/include;
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				MTL_ENABLE_DEBUG_INFO = NO;

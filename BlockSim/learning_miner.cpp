@@ -56,6 +56,10 @@ void LearningMiner::pickRandomStrategy() {
     probabilities.reserve(customStrats.size());
     std::transform(begin(customStrats), end(customStrats), std::back_inserter(probabilities), [](const LearningStrat &learningStrat) { return learningStrat.probability; });
     size_t index = selectWeightedIndex(probabilities);
+    pickStrategy(index);
+}
+
+void LearningMiner::pickStrategy(size_t index) {
     changeImplementation(customStrats[index].strat.createImp());
     stratIndex = index;
 }
@@ -75,15 +79,8 @@ void LearningMiner::updateWeights(Value profit, Value maxPossibleProfit, double 
     
     // Step 4 and Step 5
     double gHat = rawValue(normalizedProfit) / customStrats[stratIndex].probability;
-//    assert(std::isfinite(gHat) && std::isnormal(gHat));
     double weightAdjustment = std::exp((phi * gHat) / customStrats.size());
-//    assert(std::isfinite(weightAdjustment) && std::isnormal(weightAdjustment));
-//    assert(weightAdjustment >= 1);
     StratWeight newWeight = customStrats[stratIndex].weight * StratWeight(weightAdjustment);
-    
-    double weightDebug = rawWeight(newWeight);
-//    assert(!std::isnan(weightDebug) && weightDebug > 0 && !std::isinf(weightDebug));
-//    assert(std::isfinite(weightDebug) && std::isnormal(weightDebug));
     
     StratWeight maxWeight = StratWeight(1) + newWeight - customStrats[stratIndex].weight;
     
@@ -93,6 +90,10 @@ void LearningMiner::updateWeights(Value profit, Value maxPossibleProfit, double 
     for (LearningStrat &learningStrat : customStrats) {
         learningStrat.weight /= maxWeight;
     }
+}
+
+const Strategy& LearningMiner::currentStrategy() const {
+    return customStrats[stratIndex].strat;
 }
 
 void LearningMiner::print(std::ostream& os) const {

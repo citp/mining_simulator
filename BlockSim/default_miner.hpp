@@ -18,9 +18,11 @@ class Block;
 class Blockchain;
 class Strategy;
 
-Strategy createDefaultStrategy(bool noSelfMining, bool noiseInTransactions);
+Strategy createDefaultStrategy(bool atomic, bool noiseInTransactions);
 
 Value defaultValueInMinedChild(const Blockchain &blockchain, const Block &mineHere, bool noiseInTransactions);
-Block &defaultBlockToMineOn(const Miner &me, const Blockchain &blockchain, bool noSelfMining);
+
+Block &defaultBlockToMineOnAtomic(const Miner &me, const Blockchain &chain);
+Block &defaultBlockToMineOnNonAtomic(const Miner &me, const Blockchain &chain);
 
 #endif /* default_miner_hpp */

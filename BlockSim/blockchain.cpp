@@ -19,17 +19,20 @@
 
 #define HEAD_AGE BlockHeight(3)          //age of heads kept in the heads queue before moving them to the oldHeads queue
 
-Blockchain::Blockchain(BlockRate secondsPerBlock_, ValueRate transactionFeeRate_) :
-    genesis(std::make_unique<GenesisBlock>()),
+Blockchain::Blockchain(BlockchainSettings blockchainSettings) :
+    genesis(std::make_unique<GenesisBlock>(blockchainSettings.blockReward)),
     valueNetworkTotal(0),
     timeInSecs(0),
-    secondsPerBlock(secondsPerBlock_),
-    transactionFeeRate(transactionFeeRate_),
+    secondsPerBlock(blockchainSettings.secondsPerBlock),
+    transactionFeeRate(blockchainSettings.transactionFeeRate),
     _maxHeightPub(0)
 {
     genesis->publish(BlockTime(0));
     heads.push_back(genesis.get());
     _smallestBlocks.push_back({genesis.get()});
+    std::vector<Block *> newBlocks;
+    newBlocks.push_back(genesis.get());
+    _recentBlocksOfHeight.push_front(newBlocks);
     assert(heads[0] != nullptr);
 }
 
@@ -46,6 +49,12 @@ void Blockchain::newBlockAdded(Block *block) {
     if (block->height > _maxHeightPub) {
         _maxHeightPub = block->height;
         _smallestBlocks.push_back({block});
+        std::vector<Block *> newBlocks;
+        newBlocks.push_back(block);
+        _recentBlocksOfHeight.push_front(newBlocks);
+        if (_recentBlocksOfHeight.size() > rawHeight(HEAD_AGE)) {
+            _recentBlocksOfHeight.pop_back();
+        }
     } else {
         HeightType height = rawHeight(block->height);
         if (valueEquals(block->value, _smallestBlocks[height][0]->value)) {
@@ -53,6 +62,10 @@ void Blockchain::newBlockAdded(Block *block) {
         } else if (block->value < _smallestBlocks[height][0]->value) {
             _smallestBlocks[height].clear();
             _smallestBlocks[height].push_back(block);
+        }
+        
+        if (block->height >= _maxHeightPub - HEAD_AGE) {
+            _recentBlocksOfHeight[rawHeight(_maxHeightPub - block->height)].push_back(block);
         }
     }
 }
@@ -146,8 +159,8 @@ const std::vector<Block *> Blockchain::getHeadsOfHeight(BlockHeight height) cons
     return blocks;
 }
 
-const std::vector<Block *> Blockchain::oldestPublishedHeads() const {
-    auto blocks = getHeadsOfHeight(getMaxHeightPub());
+const std::vector<Block *> Blockchain::oldestPublishedHeads(BlockHeight height) const {
+    auto blocks = getHeadsOfHeight(getMaxHeightPub() - height);
     BlockTime timePublished(std::numeric_limits<BlockTime>::max());
     for (const auto &block : blocks) {
         if (block->getTimePublished() < timePublished) {
@@ -167,10 +180,33 @@ const std::vector<Block *> Blockchain::oldestPublishedHeads() const {
     return possiblities;
 }
 
-Block &Blockchain::oldestPublishedHead() const {
-    auto possiblities = oldestPublishedHeads();
+Block &Blockchain::oldestPublishedHead(BlockHeight height) const {
+    auto possiblities = oldestPublishedHeads(height);
     return *possiblities[selectRandomIndex(possiblities.size())];
 }
+
+Block &Blockchain::most(BlockHeight age, const Miner &miner) const {
+    assert(age < HEAD_AGE);
+    for (auto &block : _recentBlocksOfHeight[rawHeight(age)]) {
+        if (block->minedBy(miner)) {
+            return *block;
+        }
+    }
+    
+    return smallestHead(age);
+}
+
+Block &Blockchain::oldest(BlockHeight age, const Miner &miner) const {
+    assert(age < HEAD_AGE);
+    for (auto &block : _recentBlocksOfHeight[rawHeight(age)]) {
+        if (block->minedBy(miner)) {
+            return *block;
+        }
+    }
+    
+    return oldestPublishedHead(age);
+}
+
 
 Block &Blockchain::smallestHead(BlockHeight age) const {
     size_t height = rawHeight(getMaxHeightPub() - age);
@@ -200,4 +236,12 @@ BlockValue Blockchain::expectedBlockSize() const {
 
 TimeRate Blockchain::chanceToWin(HashRate hashRate) const {
     return hashRate / secondsPerBlock;
+}
+
+Value Blockchain::gap(BlockHeight i) const {
+    return rem(smallestHead(i + BlockHeight(1))) - rem(smallestHead(i));
+}
+
+Value Blockchain::rem(const Block &block) const {
+    return valueNetworkTotal - block.txFeesInChain;
 }

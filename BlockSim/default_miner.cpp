@@ -24,8 +24,15 @@
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-Strategy createDefaultStrategy(bool noSelfMining, bool noiseInTransactions) {
-    auto mineFunc = std::bind(defaultBlockToMineOn, _1, _2, noSelfMining);
+Strategy createDefaultStrategy(bool atomic, bool noiseInTransactions) {
+    ParentSelectorFunc mineFunc;
+    
+    if (atomic) {
+        mineFunc = defaultBlockToMineOnAtomic;
+    } else {
+        mineFunc = defaultBlockToMineOnNonAtomic;
+    }
+    
     auto valueFunc = std::bind(defaultValueInMinedChild, _1, _2, noiseInTransactions);
     
     auto impCreator = [=]() {
@@ -35,18 +42,17 @@ Strategy createDefaultStrategy(bool noSelfMining, bool noiseInTransactions) {
     return {"default-honest", impCreator};
 }
 
-Block &defaultBlockToMineOn(const Miner &me, const Blockchain &blockchain, bool noSelfMining) {
-    auto block = me.getLastMinedBlock();
-    if (!noSelfMining && block && block->get().height >= blockchain.getMaxHeightPub()) {
-        return *block;
-    } else {
-        return blockchain.oldestPublishedHead();
-    }
+Block &defaultBlockToMineOnAtomic(const Miner &me, const Blockchain &chain) {
+    return chain.oldest(BlockHeight(0), me);
 }
 
-Value defaultValueInMinedChild(const Blockchain &blockchain, const Block &mineHere, bool noiseInTransactions) {
-    auto minVal = mineHere.nextBlockReward;
-    auto maxVal = getRem(blockchain.getTotalFees(), mineHere) + mineHere.nextBlockReward;
+Block &defaultBlockToMineOnNonAtomic(const Miner &, const Blockchain &chain) {
+    return chain.oldestPublishedHead(BlockHeight(0));
+}
+
+Value defaultValueInMinedChild(const Blockchain &chain, const Block &mineHere, bool noiseInTransactions) {
+    auto minVal = mineHere.nextBlockReward();
+    auto maxVal = chain.rem(mineHere) + mineHere.nextBlockReward();
     //this represents some noise-- no noise, value would = valueMax
     //value = ((valueMax - valueMin)*((dis(gen)+.7)/1.7)) + valueMin;
     auto value = maxVal;

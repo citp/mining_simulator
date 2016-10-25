@@ -38,7 +38,7 @@ Strategy createDefaultSelfishStrategy(bool noiseInTransactions, double gamma) {
 
 Block &blockToMineOn(const Miner &me, const Blockchain &blockchain, double gamma) {
     
-    std::vector<Block*> possiblities = blockchain.oldestPublishedHeads();
+    std::vector<Block*> possiblities = blockchain.oldestPublishedHeads(BlockHeight(0));
     if (possiblities.size() == 1) { //no forking
         return *possiblities[0];
     }

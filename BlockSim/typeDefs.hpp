@@ -117,12 +117,8 @@ WeightType rawWeight(StratWeight weight);
 //#define TOTAL_BLOCK_VALUE 50 * SATOSHI_PER_BITCOIN
 //#define UNDERCUT_VALUE Value(100000)
 
-#define TOTAL_BLOCK_VALUE BlockValue(50)
 #define UNDERCUT_VALUE Value(.001)
 
-#define SEC_PER_BLOCK BlockRate(600)     //mean time in seconds to find a block
-
-#define A TOTAL_BLOCK_VALUE/SEC_PER_BLOCK  //rate transactions come in
 
 #define COST_PER_SEC_TO_MINE ValueRate(0)//(((A*SEC_PER_BLOCK+B)/SEC_PER_BLOCK)*(1.0/NUM_MINERS))*(1.0/2.0)
 //assumes block becomes profitable half way and miners have equal hash power

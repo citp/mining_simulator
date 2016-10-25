@@ -28,8 +28,14 @@ using std::placeholders::_2;
 
 bool shouldMine(const Miner &me, const Blockchain &blockchain, const MinedBlock &block);
 
-Strategy createGapStrategy(bool noSelfMining, bool noiseInTransactions) {
-    auto mineFunc = std::bind(defaultBlockToMineOn, _1, _2, noSelfMining);
+Strategy createGapStrategy(bool atomic, bool noiseInTransactions) {
+    ParentSelectorFunc mineFunc;
+    if (atomic) {
+        mineFunc = defaultBlockToMineOnAtomic;
+    } else {
+        mineFunc = defaultBlockToMineOnNonAtomic;
+    }
+    
     auto valueFunc = std::bind(defaultValueInMinedChild, _1, _2, noiseInTransactions);
     
     auto impCreator = [=]() {

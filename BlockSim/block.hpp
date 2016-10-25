@@ -17,25 +17,21 @@
 class Miner;
 
 class Block {
-    std::vector< std::unique_ptr<Block> > children;
+    std::vector< std::unique_ptr<Block>> children;
     BlockTime timePublished;
-    
-    std::vector<Block *> _smallestChildren;
 public:
     const BlockHeight height;
     const BlockTime timeMined;
     const Value value;
+    const Value txFeesInChain;
     const Value valueInChain;
-    const Value valueCreatedInChain;
-    const Value nextBlockReward;
+    const Value blockReward;
     
     Block();
-    Block(BlockTime timeSeconds, Value value, BlockHeight height, Value valueInChain, Value valueCreateInChain);
+    Block(BlockTime timeSeconds, Value txFees, BlockHeight height, Value txFeesInChain, Value valueInChain, Value blockReward);
     
     Block (const Block &block) = delete;
     virtual ~Block();
-    
-    Block *smallestChild() const;
     
     void publish(BlockTime timePub);
     BlockTime getTimePublished() const;
@@ -46,8 +42,11 @@ public:
     
     void addChild(std::unique_ptr<Block> block);
     
+    Value nextBlockReward() const;
+    
     virtual bool minedBy(const Miner &miner) const = 0;
     virtual void print(std::ostream& where, bool isPublished) const = 0;
+    bool isHead() const;
 };
 
 std::ostream& operator<< (std::ostream& out, const Block& mc);
@@ -60,7 +59,7 @@ private:
 public:
     Block &parent;
     const Miner &miner;
-    MinedBlock(Block &parent, const Miner &miner, BlockTime timeSeconds, Value value);
+    MinedBlock(Block &parent, const Miner &miner, BlockTime timeSeconds, Value txFees);
 };
 
 class GenesisBlock : public Block {
@@ -68,7 +67,7 @@ class GenesisBlock : public Block {
     
     void print(std::ostream& where, bool isPublished) const override;
 public:
-    GenesisBlock();
+    GenesisBlock(BlockValue blockReward);
 };
 
 #endif /* block_hpp */

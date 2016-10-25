@@ -29,8 +29,11 @@ public:
     
     std::vector<LearningStrat> customStrats;
     size_t stratIndex;
+    
+    const Strategy& currentStrategy() const;
     void updateProbabilities(double phi);
     void pickRandomStrategy();
+    void pickStrategy(size_t index);
     void updateWeights(Value profit, Value maxPossibleProfit, double phi);
     void writeWeights(unsigned int gameNum);
 };

@@ -26,12 +26,24 @@
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-Block &blockToMineOn(const Miner &me, const Blockchain &blockchain, bool noSelfMining, FunctionForkFunc functionForkFunc);
-Value valueInMinedChild(const Blockchain &blockchain, const Block &block, FunctionForkFunc functionForkFunc);
+Block &blockToMineOnNonAtomic(const Miner &, const Blockchain &chain, ForkFunc f);
+Block &blockToMineOnAtomic(const Miner &me, const Blockchain &chain, ForkFunc f);
 
-Strategy createFunctionForkStrategy(bool noSelfMining, FunctionForkFunc functionForkFunc, std::string type) {
-    auto mineFunc = std::bind(blockToMineOn, _1, _2, noSelfMining, functionForkFunc);
-    auto valueFunc = std::bind(valueInMinedChild, _1, _2, functionForkFunc);
+Value valueInMinedChild(const Blockchain &blockchain, const Block &block, ForkFunc f);
+
+Value valCont(const Blockchain &chain, ForkFunc f);
+Value valUnder(const Blockchain &chain, ForkFunc f);
+
+Strategy createFunctionForkStrategy(bool atomic, ForkFunc f, std::string type) {
+    ParentSelectorFunc mineFunc;
+    
+    if (atomic) {
+        mineFunc = std::bind(blockToMineOnAtomic, _1, _2, f);
+    } else {
+        mineFunc = std::bind(blockToMineOnNonAtomic, _1, _2, f);
+    }
+    auto valueFunc = std::bind(valueInMinedChild, _1, _2, f);
+    
     
     auto impCreator = [=]() {
         return std::make_unique<MinerImp>(mineFunc, valueFunc);
@@ -40,54 +52,39 @@ Strategy createFunctionForkStrategy(bool noSelfMining, FunctionForkFunc function
     return {"function-fork-" + type, impCreator};
 }
 
-Value valueInMinedChild(const Blockchain &blockchain, const Block &block, FunctionForkFunc functionForkFunc) {
-    auto moneyLeftInNetwork = getRem(blockchain.getTotalFees(), block);
-    auto value = functionForkFunc(blockchain, moneyLeftInNetwork) + block.nextBlockReward;
-    
-    auto childWithMinValue = block.smallestChild();
-    if (childWithMinValue != nullptr && value >= childWithMinValue->value) {
-        value = childWithMinValue->value - UNDERCUT_VALUE; //make sure to undercut if needbe
-    }
-    //    Value valueMax = moneyLeftInNetwork + block.nextBlockReward;
-    return value;
+Value valCont(const Blockchain &chain, ForkFunc f) {
+    auto &block = chain.smallestHead(BlockHeight(0));
+    return f(chain, chain.rem(block)) + block.nextBlockReward();
 }
 
-Block &blockToMineOn(const Miner &me, const Blockchain &blockchain, bool noSelfMining, FunctionForkFunc functionForkFunc) {
-    auto block = me.getLastMinedBlock();
-    
-    BlockHeight maxPubHeight(blockchain.getMaxHeightPub());
-    
-    if (!noSelfMining && block && block->get().height >= maxPubHeight) {
-        return *block;
+Value valUnder(const Blockchain &chain, ForkFunc f) {
+    auto &block = chain.smallestHead(BlockHeight(1));
+    return std::min(f(chain, chain.rem(block)), chain.gap(BlockHeight(0)) - UNDERCUT_VALUE) + block.nextBlockReward();
+}
+
+Block &blockToMineOnNonAtomic(const Miner &, const Blockchain &chain, ForkFunc f) {
+    if (chain.getMaxHeightPub() == BlockHeight(0) || valCont(chain, f) > valUnder(chain, f)) {
+        return chain.smallestHead(BlockHeight(0));
     } else {
-        auto &mineHere = blockchain.smallestHead(BlockHeight(0));
-        
-        if (mineHere.height == BlockHeight(0)) {
-            return mineHere;
-        }
-        
-        auto &mineHereFork = blockchain.smallestHead(BlockHeight(1));
-        auto *childWithMinValue = mineHereFork.smallestChild();
-        
-        auto valueHere = valueInMinedChild(blockchain, mineHere, functionForkFunc);
-        auto valueFork = valueInMinedChild(blockchain, mineHereFork, functionForkFunc);
-        
-        COMMENTARY("value from continuing:" << valueHere << " ");
-        COMMENTARY("value from forking:" << valueFork << " ");
-        
-        //At this point, you have 2 options, mineHere and mineHereFork. mineHere gives you the best place to mine,
-        //continuing the chain. mineHereFork gives the best place to fork (by most value left in network)
-        //moneyLeftInNetworkParent is going to be always bigger. But, if you fork, you must undercut-- so make
-        //that decision here:
-        
-        if(childWithMinValue == nullptr || valueFork < valueHere) {  //fork in tie vs. continue in tie
-            COMMENTARY("Continuing. ");
-            return mineHere;
-        }
-        else {
-            COMMENTARY("Forking. ");
-            return mineHereFork;
-        }
+        return chain.smallestHead(BlockHeight(1));
+    }
+}
+
+Block &blockToMineOnAtomic(const Miner &me, const Blockchain &chain, ForkFunc f) {
+    if (chain.getMaxHeightPub() == BlockHeight(0) ||
+        chain.most(BlockHeight(0), me).minedBy(me) ||
+        valCont(chain, f) > valUnder(chain, f)) {
+        return chain.most(BlockHeight(0), me);
+    } else {
+        return chain.most(BlockHeight(1), me);
+    }
+}
+
+Value valueInMinedChild(const Blockchain &chain, const Block &block, ForkFunc f) {
+    if (block.isHead()) {
+        return valCont(chain, f);
+    } else {
+        return valUnder(chain, f);
     }
 }
 

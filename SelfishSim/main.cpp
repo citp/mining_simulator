@@ -11,7 +11,6 @@
 #include "miner.hpp"
 #include "block.hpp"
 #include "blockchain.hpp"
-#include "multiplicative_weights.hpp"
 #include "minerStrategies.h"
 #include "logging.h"
 #include "game.hpp"
@@ -20,6 +19,7 @@
 #include "game_result.hpp"
 #include "miner_result.hpp"
 #include "mining_style.hpp"
+#include "minerImp.hpp"
 
 #include <cassert>
 #include <iostream>
@@ -33,8 +33,21 @@
 
 
 #define NOISE_IN_TRANSACTIONS false //miners don't put the max value they can into a block (simulate tx latency)
-#define NETWORK_DELAY BlockTime(20)         //network delay in seconds for network to hear about your block
+
+#define NETWORK_DELAY BlockTime(0)         //network delay in seconds for network to hear about your block
 #define EXPECTED_NUMBER_OF_BLOCKS BlockCount(10000)
+
+#define LAMBERT_COEFF 0.13533528323661//coeff for lambert func equil  must be in [0,.2]
+//0.13533528323661 = 1/(e^2)
+
+#define B BlockValue(3.125) // Block reward
+//#define TOTAL_BLOCK_VALUE BlockValue(15.625)
+#define TOTAL_BLOCK_VALUE BlockValue(13)
+
+#define SEC_PER_BLOCK BlockRate(600)     //mean time in seconds to find a block
+
+//#define B BlockValue(3.125) // Block reward
+#define A (TOTAL_BLOCK_VALUE - B)/SEC_PER_BLOCK  //rate transactions come in
 
 #define SELFISH_GAMMA 0.0 //fraction of network favoring your side in a dead tie
 //half way and miners have equal hash power
@@ -60,14 +73,21 @@ int main(int, const char * []) {
         auto defaultStrat = createDefaultSelfishStrategy(NOISE_IN_TRANSACTIONS, SELFISH_GAMMA);
         auto selfishStrat = createCleverSelfishStrategy(NOISE_IN_TRANSACTIONS, Value(100));
         
-        miners.push_back(selfishStrat.generateMiner({0, std::to_string(0), selfishPower, NETWORK_DELAY, COST_PER_SEC_TO_MINE}));
-        miners.push_back(defaultStrat.generateMiner({1, std::to_string(1), HashRate(1.0) - selfishPower, NETWORK_DELAY, COST_PER_SEC_TO_MINE}));
+        MinerParameters selfishMinerParams = {0, std::to_string(0), selfishPower, NETWORK_DELAY, COST_PER_SEC_TO_MINE};
+        MinerParameters defaultinerParams = {1, std::to_string(1), HashRate(1.0) - selfishPower, NETWORK_DELAY, COST_PER_SEC_TO_MINE};
+        
+        miners.push_back(std::make_unique<Miner>(selfishMinerParams, selfishStrat.createImp()));
+        miners.push_back(std::make_unique<Miner>(defaultinerParams, defaultStrat.createImp()));
+        
         MinerGroup minerGroup(std::move(miners));
         
         GAMEINFO("\n\nGame#: " << gameNum << " The board is set, the pieces are in motion..." << std::endl);
         GAMEINFO("miner ratio:" << selfishPower << " selfish." << std::endl);
         
-        auto result = runGame(minerGroup, EXPECTED_NUMBER_OF_BLOCKS, SEC_PER_BLOCK, A);
+        BlockchainSettings blockchainSettings = {SEC_PER_BLOCK, A, B};
+        GameSettings gameSettings = {EXPECTED_NUMBER_OF_BLOCKS, blockchainSettings};
+        
+        auto result = runGame(minerGroup, gameSettings);
         auto minerResults = result.second.minerResults;
         
         GAMEINFO("The game is complete. Calculate the scores:" << std::endl);
@@ -86,7 +106,7 @@ int main(int, const char * []) {
         Value totalProfit = winningBlock.valueInChain;
         GAMEINFO("Total profit:" << totalProfit << std::endl);
         
-        auto fractionOfProfits = minerResults[miners[0].get()].totalProfit/totalProfit;
+        auto fractionOfProfits = minerResults[minerGroup.miners[0].get()].totalProfit/totalProfit;
         GAMEINFO("Fraction earned by selfish:" << fractionOfProfits << " with " << selfishPower << " fraction of hash power" << std::endl);
         plot << selfishPower << " " << fractionOfProfits << std::endl;
         

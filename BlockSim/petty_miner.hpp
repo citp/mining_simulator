@@ -13,6 +13,6 @@
 
 class Strategy;
 
-Strategy createPettyStrategy(bool noSelfMining, bool noiseInTransactions);
+Strategy createPettyStrategy(bool atomic, bool noiseInTransactions);
 
 #endif /* petty_miner_hpp */

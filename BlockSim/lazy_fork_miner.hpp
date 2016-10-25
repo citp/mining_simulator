@@ -13,6 +13,6 @@
 
 class Strategy;
 
-Strategy createLazyForkStrategy(bool noSelfMining);
+Strategy createLazyForkStrategy(bool atomic);
 
 #endif /* undercut_miner_hpp */

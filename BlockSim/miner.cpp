@@ -41,7 +41,6 @@ void Miner::initialize(const Blockchain &blockchain) {
     implementation->initialize(blockchain, *this);
     blocksMinedTotal = BlockCount(0);
     waitingToPublishQueue.clear();
-    _lastMinedBlock = nullopt;
 }
 
 BlockTime Miner::nextMiningTime() const {
@@ -63,7 +62,6 @@ void Miner::miningPhase(const Blockchain &blockchain) {
     )
     
     if (block) {
-        _lastMinedBlock = make_optional(std::ref(*block));
         implementation->publisher->addNewBlock(std::move(block));
         blocksMinedTotal++;
     }

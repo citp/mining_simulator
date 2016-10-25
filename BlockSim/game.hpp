@@ -10,14 +10,20 @@
 #define game_hpp
 
 #include "typeDefs.hpp"
+#include "blockchain.hpp"
 
 #include <iostream>
 
 class Blockchain;
 struct GameResult;
 class MinerGroup;
+struct BlockchainSettings;
 
-std::pair< std::unique_ptr<Blockchain>, GameResult> runGame(MinerGroup &minerGroup, BlockCount numberOfBlocks, BlockRate secondsPerBlock, ValueRate transactionFeeRate);
+struct GameSettings {
+    BlockCount numberOfBlocks;
+    BlockchainSettings blockchainSettings;
+};
 
+std::pair< std::unique_ptr<Blockchain>, GameResult> runGame(MinerGroup &minerGroup, GameSettings gameSettings);
 
 #endif /* game_hpp */

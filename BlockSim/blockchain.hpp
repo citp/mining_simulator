@@ -16,6 +16,13 @@
 class Block;
 class GenesisBlock;
 class MinedBlock;
+class Miner;
+
+struct BlockchainSettings {
+    BlockRate secondsPerBlock;
+    ValueRate transactionFeeRate;
+    BlockValue blockReward;
+};
 
 class Blockchain {
     const std::unique_ptr<GenesisBlock> genesis;
@@ -30,12 +37,13 @@ class Blockchain {
     
     BlockHeight _maxHeightPub;
     std::vector<std::vector<Block *>> _smallestBlocks; // cache smallest blocks of a given height
+    std::deque<std::vector<Block *>> _recentBlocksOfHeight;
     
 private:
     void newBlockAdded(Block *block);
     
 public:
-    Blockchain(BlockRate secondsPerBlock, ValueRate transactionFeeRate);
+    Blockchain(BlockchainSettings blockchainSettings);
     const std::deque<Block *> &getHeads() const;
     const std::vector<Block *> &getOldHeads() const;
     const std::vector<Block *> getHeadsOfHeight(BlockHeight height) const;
@@ -49,8 +57,8 @@ public:
     
     const Block &winningHead() const;
     
-    const std::vector<Block *> oldestPublishedHeads() const;
-    Block &oldestPublishedHead() const;
+    const std::vector<Block *> oldestPublishedHeads(BlockHeight height) const;
+    Block &oldestPublishedHead(BlockHeight height) const;
     Block &smallestHead(BlockHeight age) const;
     
     void tick(BlockTime timePassed);
@@ -70,6 +78,12 @@ public:
     
     BlockValue expectedBlockSize() const;
     TimeRate chanceToWin(HashRate hashRate) const;
+    
+    Value gap(BlockHeight i) const;
+    Value rem(const Block &block) const;
+    
+    Block &most(BlockHeight age, const Miner &miner) const;
+    Block &oldest(BlockHeight age, const Miner &miner) const;
 };
 
 #endif /* blockchain_hpp */

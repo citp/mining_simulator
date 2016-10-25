@@ -26,11 +26,19 @@ using std::placeholders::_1;
 using std::placeholders::_2;
 
 Value lazyValueInMinedChild(const Blockchain &blockchain, const Block &mineHere);
-Block &lazyBlockToMineOn(const Miner &me, const Blockchain &blockchain, bool noSelfMining);
+Block &lazyBlockToMineOnAtomic(const Miner &me, const Blockchain &chain);
+Block &lazyBlockToMineOnNonAtomic(const Miner &me, const Blockchain &chain);
 
-Strategy createLazyForkStrategy(bool noSelfMining) {
-    auto mineFunc = std::bind(lazyBlockToMineOn, _1, _2, noSelfMining);
-    auto valueFunc = std::bind(lazyValueInMinedChild, _1, _2);
+Strategy createLazyForkStrategy(bool atomic) {
+    
+    ParentSelectorFunc mineFunc;
+    
+    if (atomic) {
+        mineFunc = lazyBlockToMineOnAtomic;
+    } else {
+        mineFunc = lazyBlockToMineOnNonAtomic;
+    }
+    auto valueFunc = lazyValueInMinedChild;
     
     auto impCreator = [=]() {
         return std::make_unique<MinerImp>(mineFunc, valueFunc);
@@ -39,56 +47,24 @@ Strategy createLazyForkStrategy(bool noSelfMining) {
     return {"lazy-fork", impCreator};
 }
 
-Block &lazyBlockToMineOn(const Miner &me, const Blockchain &blockchain, bool noSelfMining) {
-    //you want to mine only on blocks leaving the most money in the network
-    //or make a new block
-    auto block = me.getLastMinedBlock();
-    if (!noSelfMining && block && block->get().height >= blockchain.getMaxHeightPub()) {
-        return *block;
+Block &lazyBlockToMineOnAtomic(const Miner &me, const Blockchain &chain) {
+    if (chain.getMaxHeightPub() == BlockHeight(0) || chain.rem(chain.most(BlockHeight(0), me)) > chain.gap(BlockHeight(0))) {
+        return chain.most(BlockHeight(0), me);
     } else {
-        //out of the published heads at max height, you mine on the one with the max val left in network
-        Block &mineHere = blockchain.smallestHead(BlockHeight(0));
-        Value moneyLeftInNetwork = getRem(blockchain.getTotalFees(), mineHere);
-        //if the best node to mine off of is not public, or there is less money in the network than in the block
-        //you should try to fork
-        if (mineHere.value >= moneyLeftInNetwork + mineHere.nextBlockReward && mineHere.height > BlockHeight(0)) {
-            return blockchain.smallestHead(BlockHeight(1));
-        } else {
-            return mineHere;
-        }
+        return chain.most(BlockHeight(1), me);
     }
-    
 }
 
-Value lazyValueInMinedChild(const Blockchain &blockchain, const Block &mineHere) {
-    auto feePool = getRem(blockchain.getTotalFees(), mineHere);
-    return feePool / Value(2.0) + mineHere.nextBlockReward;
-}
-
-Block &blockToMineOn(const Miner &me, const Blockchain &blockchain);
-Value blockValue(const Blockchain &blockchain, const Block &mineHere);
-
-
-Block &blockToMineOn(const Miner &me, const Blockchain &blockchain) {
-    auto block = me.getLastMinedBlock();
-    if (!block && block->get().height >= blockchain.getMaxHeightPub()) {
-        return *block;
+Block &lazyBlockToMineOnNonAtomic(const Miner &, const Blockchain &chain) {
+    if (chain.getMaxHeightPub() == BlockHeight(0) || chain.rem(chain.smallestHead(BlockHeight(0))) > chain.gap(BlockHeight(0))) {
+        return chain.smallestHead(BlockHeight(0));
     } else {
-        Block &smallestHead = blockchain.smallestHead(BlockHeight(0));
-        Value rem = getRem(blockchain.getTotalFees(), smallestHead);
-        if (smallestHead.value >= rem + smallestHead.nextBlockReward &&
-            smallestHead.height > BlockHeight(0)) {
-            return blockchain.smallestHead(BlockHeight(1));
-        } else {
-            return smallestHead;
-        }
+        return chain.smallestHead(BlockHeight(1));
     }
-    
 }
 
-Value blockValue(const Blockchain &blockchain, const Block &mineHere) {
-    auto rem = getRem(blockchain.getTotalFees(), mineHere);
-    return rem / Value(2.0) + mineHere.nextBlockReward;
+Value lazyValueInMinedChild(const Blockchain &chain, const Block &mineHere) {
+    return chain.rem(mineHere) / Value(2.0) + mineHere.nextBlockReward();
 }
 
 

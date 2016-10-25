@@ -13,6 +13,6 @@
 
 class Strategy;
 
-Strategy createGapStrategy(bool noSelfMining, bool noiseInTransactions);
+Strategy createGapStrategy(bool atomic, bool noiseInTransactions);
 
 #endif /* gap_miner_hpp */

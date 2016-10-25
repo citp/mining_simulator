@@ -19,6 +19,8 @@
 #include "typeDefs.hpp"
 #include "learning_miner.hpp"
 #include "minerImp.hpp"
+#include "multiplicative_weights_learning_model.hpp"
+#include "exp3_learning_model.hpp"
 
 #include <iostream>
 #include <iomanip>
@@ -28,7 +30,7 @@
 //--more representative of smaller miners, where the chance that you mine the
 //next block is ~0 (not to be confused with the strategy selfish mining)
 
-#define NO_SELF_MINING true     //not realistic, but do not force miners to mine on top of their own blocks
+#define ATOMIC false     //not realistic, but do not force miners to mine on top of their own blocks
 #define NOISE_IN_TRANSACTIONS false //miners don't put the max value they can into a block (simulate tx latency)
 
 #define NETWORK_DELAY BlockTime(0)         //network delay in seconds for network to hear about your block
@@ -37,18 +39,29 @@
 #define LAMBERT_COEFF 0.13533528323661//coeff for lambert func equil  must be in [0,.2]
 //0.13533528323661 = 1/(e^2)
 
+#define B BlockValue(3.125) // Block reward
+//#define TOTAL_BLOCK_VALUE BlockValue(15.625)
+#define TOTAL_BLOCK_VALUE BlockValue(13)
+
+#define SEC_PER_BLOCK BlockRate(600)     //mean time in seconds to find a block
+
+//#define B BlockValue(3.125) // Block reward
+#define A (TOTAL_BLOCK_VALUE - B)/SEC_PER_BLOCK  //rate transactions come in
+
+
 struct RunSettings {
     unsigned int numberOfGames;
     MinerCount totalMiners;
-    BlockRate secondsPerBlock;
-    BlockCount blockCount;
+    MinerCount fixedDefault;
+    GameSettings gameSettings;
+    std::string folderPrefix;
 };
 
-void runStratGame(RunSettings settings, MinerCount fixedDefault, std::vector<Strategy> &strategies, Strategy defaultStrategy, std::string folderPrefix);
+void runStratGame(RunSettings settings, std::vector<Strategy> &strategies, Strategy defaultStrategy);
 
-void runSingleStratGame(RunSettings settings, MinerCount fixedDefault, std::string folderPrefix);
+void runSingleStratGame(RunSettings settings);
 
-void runStratGame(RunSettings settings, MinerCount fixedDefault, std::vector<Strategy> &strategies, Strategy defaultStrategy, std::string folderPrefix) {
+void runStratGame(RunSettings settings, std::vector<Strategy> &strategies, Strategy defaultStrategy) {
     
     //start running games
     BlockCount totalBlocksMined(0);
@@ -56,11 +69,11 @@ void runStratGame(RunSettings settings, MinerCount fixedDefault, std::vector<Str
     
     std::string resultFolder = "";
     
-    if (folderPrefix.length() > 0) {
-        resultFolder += folderPrefix + "-";
+    if (settings.folderPrefix.length() > 0) {
+        resultFolder += settings.folderPrefix + "-";
     }
     
-    resultFolder += std::to_string(rawCount(fixedDefault));
+    resultFolder += std::to_string(rawCount(settings.fixedDefault));
     
     char final [256];
     sprintf (final, "./%s", resultFolder.c_str());
@@ -70,7 +83,7 @@ void runStratGame(RunSettings settings, MinerCount fixedDefault, std::vector<Str
     std::vector<LearningMiner *> learningMiners;
     
     HashRate hashRate(1.0/rawCount(settings.totalMiners));
-    MinerCount numberRandomMiners(settings.totalMiners - fixedDefault);
+    MinerCount numberRandomMiners(settings.totalMiners - settings.fixedDefault);
     
     for (MinerCount i(0); i < settings.totalMiners; i++) {
         auto minerName = std::to_string(rawCount(i));
@@ -85,40 +98,46 @@ void runStratGame(RunSettings settings, MinerCount fixedDefault, std::vector<Str
         }
     }
     
-    MinerGroup minerGroup(learningMiners, std::move(miners), strategies, resultFolder);
+//    LearningModel *learningModel = new MultiplicativeWeightsLearningModel(strategies, learningMiners, resultFolder);
+    LearningModel *learningModel = new Exp3LearningModel(strategies, learningMiners, resultFolder);
+    
+    MinerGroup minerGroup(std::move(miners));
     
 //    double phi = std::sqrt(strategies.size() * std::log(strategies.size())) / std::sqrt(settings.numberOfGames);
 //    double phi = std::sqrt(strategies.size() * std::log(strategies.size())) / std::sqrt(settings.numberOfGames / 100);
     
-    double phi = .01;
+    double phi = .1;
     
     for (unsigned int gameNum = 0; gameNum < settings.numberOfGames; gameNum++) {
 //        double n = gameNum;
 //        double nMax = settings.numberOfGames;
 //        double phi = std::pow(.9, (n / nMax) * 30.0);
-
-        minerGroup.writeWeights(gameNum);
-        minerGroup.updateProbabilities(phi); // Step 1
-        minerGroup.resetAndpickNewStrategies(); // Step 2
-        
+        learningModel->writeWeights(gameNum);
+        learningModel->pickNewStrategies(phi);
         GAMEINFO("\n\nGame#: " << gameNum << " The board is set, the pieces are in motion..." << std::endl);
         
-        auto result = runGame(minerGroup, settings.blockCount, settings.secondsPerBlock, A);
+        auto result = runGame(minerGroup, settings.gameSettings);
         
         GAMEINFO("The game is complete. Calculate the scores:" << std::endl);
         
-        Value maxProfit = (A * (EXPECTED_NUMBER_OF_BLOCKS * settings.secondsPerBlock) - result.second.moneyLeftAtEnd) / Value(rawCount(settings.totalMiners) / 4);
+        Value maxProfit = (A * (EXPECTED_NUMBER_OF_BLOCKS * settings.gameSettings.blockchainSettings.secondsPerBlock) - result.second.moneyLeftAtEnd) / Value(rawCount(settings.totalMiners) / 4);
         
         // Steps 3, 4, 5
-        minerGroup.updateWeights(result.second, maxProfit, phi);
+        learningModel->updateWeights(result.second, maxProfit, phi);
         
         totalBlocksMined += result.second.totalBlocksMined;
         blocksInLongestChain += result.second.blocksInLongestChain;
+        
+//        BlockCount staleBlocks(result.second.totalBlocksMined - result.second.blocksInLongestChain);
+        
+        
+//        std::cout << result.second.moneyInLongestChain << " in chain and " <<
+//        result.second.moneyLeftAtEnd << " left with " << 100 * double(rawCount(staleBlocks)) / double(rawCount(result.second.totalBlocksMined)) << "% orphan rate" <<  std::endl;
     }
+    learningModel->writeWeights(settings.numberOfGames);
     
-    minerGroup.writeWeights(settings.numberOfGames);
-    
-    //    std::cout << 100 * double(rawHeight(blocksInLongestChain)) / double(rawHeight(totalBlocksMined)) << "% in final chain" << std::endl;
+    delete learningModel;
+//    std::cout << 100 * double(rawCount(blocksInLongestChain)) / double(rawCount(totalBlocksMined)) << "% in final chain" << std::endl;
     
     GAMEINFOBLOCK(
                   GAMEINFO("Games over. Final strategy weights:\n");
@@ -126,28 +145,39 @@ void runStratGame(RunSettings settings, MinerCount fixedDefault, std::vector<Str
                   )
 }
 
-void runSingleStratGame(RunSettings settings, MinerCount fixedDefault, std::string folderPrefix) {
+void runSingleStratGame(RunSettings settings) {
     using std::placeholders::_1;
     using std::placeholders::_2;
     
     std::vector<Strategy> strategies;
     
-    Strategy defaultStrategy = createDefaultStrategy(NO_SELF_MINING, NOISE_IN_TRANSACTIONS);
+    Strategy defaultStrategy = createDefaultStrategy(ATOMIC, NOISE_IN_TRANSACTIONS);
 
-    strategies.push_back(createPettyStrategy(NO_SELF_MINING, NOISE_IN_TRANSACTIONS));
+    strategies.push_back(createPettyStrategy(ATOMIC, NOISE_IN_TRANSACTIONS));
     for (int i = -1; i < 3; i++) {
         int funcCoeff = static_cast<int>(pow(2, (i + 1)));
         std::function<Value(const Blockchain &, Value)> forkFunc(std::bind(functionForkPercentage, _1, _2, funcCoeff));
-        strategies.push_back(createFunctionForkStrategy(NO_SELF_MINING, forkFunc, std::to_string(funcCoeff)));
+        strategies.push_back(createFunctionForkStrategy(ATOMIC, forkFunc, std::to_string(funcCoeff)));
     }
 //  strategies.push_back(createFunctionForkStrategy(NO_SELF_MINING, std::bind(functionForkLambert, _1, _2, LAMBERT_COEFF), "lambert"));
-    strategies.push_back(createLazyForkStrategy(NO_SELF_MINING));
+    strategies.push_back(createLazyForkStrategy(ATOMIC));
     
     
-    runStratGame(settings, fixedDefault, strategies, defaultStrategy, folderPrefix);
+    runStratGame(settings, strategies, defaultStrategy);
 }
 
 int main(int, const char * []) {
-    runSingleStratGame({400000, MinerCount(200), SEC_PER_BLOCK, EXPECTED_NUMBER_OF_BLOCKS}, MinerCount(0),"test");
+    
+    BlockchainSettings blockchainSettings = {SEC_PER_BLOCK, A, B};
+    GameSettings gameSettings = {EXPECTED_NUMBER_OF_BLOCKS, blockchainSettings};
+    
+//    for (MinerCount i(440); i < MinerCount(1001); i += MinerCount(10)) {
+//        RunSettings runSettings = {20000, MinerCount(1000), i, gameSettings, "mult"};
+//        runSingleStratGame(runSettings);
+//    }
+    
+//    runSingleStratGame({10000000, MinerCount(100), SEC_PER_BLOCK, EXPECTED_NUMBER_OF_BLOCKS}, MinerCount(31),"test");
+    RunSettings runSettings = {100000, MinerCount(50), MinerCount(0), gameSettings, "reward2"};
+    runSingleStratGame(runSettings);
     
 }

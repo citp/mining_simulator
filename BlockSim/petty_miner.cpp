@@ -24,10 +24,18 @@
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-Block &blockToMineOn(const Miner &me, const Blockchain &blockchain, bool noSelfMining);
+Block &blockToMineOnAtomic(const Miner &me, const Blockchain &chain);
+Block &blockToMineOnNonAtomic(const Miner &me, const Blockchain &chain);
 
-Strategy createPettyStrategy(bool noSelfMining, bool noiseInTransactions) {
-    auto mineFunc = std::bind(blockToMineOn, _1, _2, noSelfMining);
+Strategy createPettyStrategy(bool atomic, bool noiseInTransactions) {
+
+    ParentSelectorFunc mineFunc;
+    
+    if (atomic) {
+        mineFunc = blockToMineOnAtomic;
+    } else {
+        mineFunc = blockToMineOnNonAtomic;
+    }
     auto valueFunc = std::bind(defaultValueInMinedChild, _1, _2, noiseInTransactions);
     
     auto impCreator = [=]() {
@@ -37,11 +45,10 @@ Strategy createPettyStrategy(bool noSelfMining, bool noiseInTransactions) {
     return {"petty-honest", impCreator};
 }
 
-Block &blockToMineOn(const Miner &me, const Blockchain &blockchain, bool noSelfMining) {
-    auto block = me.getLastMinedBlock();
-    if (!noSelfMining && block && block->get().height >= blockchain.getMaxHeightPub()) {
-        return *block;
-    } else {
-        return blockchain.smallestHead(BlockHeight(0));
-    }
+Block &blockToMineOnAtomic(const Miner &me, const Blockchain &chain) {
+    return chain.most(BlockHeight(0), me);
+}
+
+Block &blockToMineOnNonAtomic(const Miner &, const Blockchain &chain) {
+    return chain.smallestHead(BlockHeight(0));
 }

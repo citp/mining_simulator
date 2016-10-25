@@ -15,41 +15,23 @@
 #include <sstream>
 #include <limits>
 
-#define B 0 //50.0//(5.0)   //block reward
-
 Block::~Block() = default;
 
-GenesisBlock::GenesisBlock() : Block(BlockTime(0), Value(0), BlockHeight(0), Value(0), Value(0)) {}
+GenesisBlock::GenesisBlock(BlockValue blockReward) : Block(BlockTime(0), Value(0), BlockHeight(0), Value(0), Value(0), Value(rawValue(blockReward))) {}
 
-Block::Block(BlockTime timeSeconds_, Value value_, BlockHeight height_, Value valueInChain_, Value valueCreateInChain_) : height(height_), timeMined(timeSeconds_), value(value_), valueInChain(valueInChain_), valueCreatedInChain(valueCreateInChain_), nextBlockReward(B) {}
+Block::Block(BlockTime timeSeconds_, Value txFees, BlockHeight height_, Value txFeesInChain_, Value valueInChain_, Value blockReward_) : height(height_), timeMined(timeSeconds_), value(txFees + blockReward_), txFeesInChain(txFeesInChain_), valueInChain(valueInChain_), blockReward(blockReward_) {}
 
-MinedBlock::MinedBlock(Block &parent_, const Miner &miner_, BlockTime timeSeconds_, Value value_) :
-    Block(timeSeconds_, value_, parent_.height + BlockHeight(1), parent_.valueInChain + value_, parent_.valueCreatedInChain + parent_.nextBlockReward),
+MinedBlock::MinedBlock(Block &parent_, const Miner &miner_, BlockTime timeSeconds_, Value txFees) :
+    Block(timeSeconds_, txFees, parent_.height + BlockHeight(1), parent_.txFeesInChain + txFees, parent_.valueInChain + parent_.blockReward + txFees, parent_.nextBlockReward()),
     parent(parent_), miner(miner_) {}
 
 void Block::addChild(std::unique_ptr<Block> block) {
     assert(block.get() != NULL);
-    
-    if (_smallestChildren.empty()) {
-        _smallestChildren.push_back(block.get());
-    } else {
-        if (valueEquals(block->value, _smallestChildren[0]->value)) {
-            _smallestChildren.push_back(block.get());
-        } else if (block->value < _smallestChildren[0]->value) {
-            _smallestChildren.clear();
-            _smallestChildren.push_back(block.get());
-        }
-    }
-    
     children.push_back(std::move(block));
 }
 
-Block *Block::smallestChild() const {
-    if (_smallestChildren.empty()) {
-        return nullptr;
-    } else {
-        return _smallestChildren[selectRandomIndex(_smallestChildren.size())];
-    }
+Value Block::nextBlockReward() const {
+    return blockReward;
 }
 
 void Block::publish(BlockTime timePub) {
@@ -121,4 +103,8 @@ bool MinedBlock::minedBy(const Miner &miner_) const {
 
 bool GenesisBlock::minedBy(const Miner &) const {
     return false;
+}
+
+bool Block::isHead() const {
+    return children.size() == 0;
 }

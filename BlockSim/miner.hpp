@@ -35,7 +35,6 @@ private:
     BlockCount blocksMinedTotal;
     std::deque<std::unique_ptr<MinedBlock>> waitingToPublishQueue;
     std::unique_ptr<MinerImp> implementation;
-    optional<std::reference_wrapper<MinedBlock>> _lastMinedBlock;
     
     bool findsBlock(const Blockchain &blockchain);
 protected:
@@ -56,11 +55,6 @@ public:
     
     void publishPhase(Blockchain &blockchain);
     void miningPhase(const Blockchain &blockchain);
-    
-    optional<std::reference_wrapper<MinedBlock>> getLastMinedBlock() const {
-        
-        return _lastMinedBlock;
-    }
     
      friend std::ostream& operator<<(std::ostream& os, const Miner& miner);
 };

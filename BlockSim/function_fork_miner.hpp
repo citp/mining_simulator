@@ -17,9 +17,9 @@
 class Strategy;
 class Blockchain;
 
-using FunctionForkFunc = std::function<Value(const Blockchain &, Value)>;
+using ForkFunc = std::function<Value(const Blockchain &, Value)>;
 
-Strategy createFunctionForkStrategy(bool noSelfMining, FunctionForkFunc functionForkFunc, std::string type);
+Strategy createFunctionForkStrategy(bool atomic, ForkFunc f, std::string type);
 
 Value functionForkPercentage(const Blockchain &blockchain, Value maxVal, double funcCoeff);
 Value functionForkLambert(const Blockchain &blockchain, Value maxVal, double lambertCoeff);

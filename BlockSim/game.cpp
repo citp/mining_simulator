@@ -20,10 +20,10 @@
 #include <cassert>
 #include <iostream>
 
-std::pair<std::unique_ptr<Blockchain>, GameResult> runGame(MinerGroup &minerGroup, BlockCount numberOfBlocks, BlockRate secondsPerBlock, ValueRate transactionFeeRate) {
+std::pair<std::unique_ptr<Blockchain>, GameResult> runGame(MinerGroup &minerGroup, GameSettings gameSettings) {
     //set up the blockchain
     
-    auto blockchain = std::make_unique<Blockchain>(secondsPerBlock, transactionFeeRate);
+    auto blockchain = std::make_unique<Blockchain>(gameSettings.blockchainSettings);
     
     minerGroup.initialize(*blockchain);
     minerGroup.resetOrder();
@@ -32,7 +32,7 @@ std::pair<std::unique_ptr<Blockchain>, GameResult> runGame(MinerGroup &minerGrou
     
     //mining loop
     
-    BlockTime totalSeconds = numberOfBlocks * secondsPerBlock;
+    BlockTime totalSeconds = gameSettings.numberOfBlocks * gameSettings.blockchainSettings.secondsPerBlock;
     
     while (blockchain->getTime() < totalSeconds) {
         
@@ -69,6 +69,7 @@ std::pair<std::unique_ptr<Blockchain>, GameResult> runGame(MinerGroup &minerGrou
     
     auto winningChain = blockchain->winningHead().getChain();
     int parentCount = 0;
+    Value totalValue(0);
     for (auto block : winningChain) {
         
         auto minedBlock = dynamic_cast<const MinedBlock *>(&block.get());
@@ -78,6 +79,7 @@ std::pair<std::unique_ptr<Blockchain>, GameResult> runGame(MinerGroup &minerGrou
             }
             minerResults[&minedBlock->miner].addBlock(minedBlock);
         }
+        totalValue += block.get().value;
     }
     
 //    std::cout << parentCount << " block mined over parent" << std::endl;
@@ -93,9 +95,9 @@ std::pair<std::unique_ptr<Blockchain>, GameResult> runGame(MinerGroup &minerGrou
         finalBlocks += minerResults[miner.get()].blocksInWinningChain;
     }
     
-    Value moneyLeftAtEnd = getRem(blockchain->getTotalFees(), winningChain[0]);
+    Value moneyLeftAtEnd = blockchain->rem(winningChain[0]);
     
-    GameResult result(minerResults, totalBlocks, finalBlocks, moneyLeftAtEnd);
+    GameResult result(minerResults, totalBlocks, finalBlocks, moneyLeftAtEnd, totalValue);
     
     GAMEINFO("Total blocks mined:" << totalBlocks << " with " << finalBlocks << " making it into the final chain" << std::endl);
     

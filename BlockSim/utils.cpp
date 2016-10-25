@@ -18,10 +18,6 @@ inline std::mt19937& getGen() {
     return gen;
 }
 
-Value getRem(Value valueNetworkTotal, const Block &block) {
-    return valueNetworkTotal + block.valueCreatedInChain - block.valueInChain;
-}
-
 std::size_t selectRandomIndex(std::size_t size) {
     std::uniform_int_distribution<std::size_t> vectorDis(0, size - 1);
     return vectorDis(getGen());
