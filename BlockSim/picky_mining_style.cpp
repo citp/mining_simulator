@@ -15,27 +15,26 @@
 #include <assert.h>
 #include <cmath>
 
-void PickyMiningStyle::initialize(const Blockchain &blockchain, const Miner &miner) {
-    MiningStyle::initialize(blockchain, miner);
-    totalMiningCost = Value(0);
+PickyMiningStyle::PickyMiningStyle(ParentSelectorFunc parentSelectorFunc_, BlockValueFunc blockValueFunc_, ShouldMineFunc shouldMineFunc_) : MiningStyle(parentSelectorFunc_, blockValueFunc_), shouldMineFunc(shouldMineFunc_)  {}
+
+BlockTime PickyMiningStyle::nextMiningTime(const Blockchain &chain, const Miner &) const {
+    return chain.getTime() + BlockTime(1);
 }
 
-Value PickyMiningStyle::moneySpentMining(const Miner &) const {
-    return totalMiningCost;
-}
-
-BlockTime PickyMiningStyle::nextMiningTime() const {
-    return getTimeReached() + BlockTime(1);
-}
-
-std::unique_ptr<MinedBlock> PickyMiningStyle::attemptToMineImp(const Blockchain &blockchain, Miner &miner) {
-    if (TimeRate(selectRandomChance()) < blockchain.chanceToWin(miner.params.hashRate)) {
-        auto block = createBlock(blockchain, miner);
-        if (shouldMineFunc(miner, blockchain, *block)) {
-            totalMiningCost += miner.params.costPerSecond * BlockTime(1);
-            return block;
+std::pair<std::unique_ptr<Block>, Value> PickyMiningStyle::attemptToMine(Blockchain &blockchain, Miner *miner, BlockTime) {
+    auto block = createBlock(blockchain, *miner);
+    if (shouldMineFunc(*miner, blockchain, *block)) {
+        Value cost = miner->params.costPerSecond * BlockTime(1);
+        if (TimeRate(selectRandomChance()) < blockchain.chanceToWin(miner->params.hashRate)) {
+            return std::make_pair(std::move(block), cost);
+        } else {
+            return std::make_pair(nullptr, cost);
         }
     }
     
-    return nullptr;
+    return std::make_pair(nullptr, Value(0));
+}
+
+Value PickyMiningStyle::resetMiningCost(const Miner &, const Blockchain &, BlockTime) {
+    return Value(0);
 }

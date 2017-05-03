@@ -14,19 +14,11 @@
 class SimplePublisher : public PublishingStrategy {
     
 private:
-    BlockTime _nextPublish;
-    std::unique_ptr<MinedBlock> unpublishedBlock;
+    std::vector<std::unique_ptr<Block>> publishBlocks(const Blockchain &, const Miner &, std::vector<std::unique_ptr<Block>> &) override;
     
-    inline BlockTime nextPublishingTime() const override {
-        return _nextPublish;
-    }
-    
-    std::vector<std::unique_ptr<MinedBlock>> publishBlocks(const Blockchain &blockchain, const Miner &me) override;
-    
-    void addNewBlock(std::unique_ptr<MinedBlock> block) override;
+    bool withholdsBlocks() const override { return false; }
 public:
     SimplePublisher();
-    void initialize(const Blockchain &blockchain, const Miner &miner) override;
 };
 
 #endif /* simple_publisher_hpp */

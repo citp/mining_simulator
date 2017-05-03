@@ -11,19 +11,19 @@
 
 #include "typeDefs.hpp"
 
-#include <map>
+#include <vector>
 
 struct MinerResult;
 class Miner;
 
 struct GameResult {
-    std::map<const Miner *, MinerResult> minerResults;
+    std::vector<MinerResult> minerResults;
     BlockCount totalBlocksMined;
     BlockCount blocksInLongestChain;
     Value moneyLeftAtEnd;
     Value moneyInLongestChain;
     
-    GameResult(std::map<const Miner *, MinerResult> minerResults, BlockCount totalBlocksMined, BlockCount blocksInLongestChain, Value moneyLeftAtEnd, Value moneyInLongestChain);
+    GameResult(std::vector<MinerResult> minerResults, BlockCount totalBlocksMined, BlockCount blocksInLongestChain, Value moneyLeftAtEnd, Value moneyInLongestChain);
 };
 
 #endif /* game_result_hpp */

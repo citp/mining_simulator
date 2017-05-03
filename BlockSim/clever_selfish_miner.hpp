@@ -14,11 +14,11 @@
 class CleverSelfishPublishingStyle : public SelfishPublishingStyle {
 private:
     const Value cutoff;
-    BlockHeight heightToPublish(const Blockchain &blockchain, const Miner &me) const override;
+    BlockHeight heightToPublish(const Blockchain &blockchain, const Miner &me, std::vector<std::unique_ptr<Block>> &unpublishedBlocks) const override;
 public:
     CleverSelfishPublishingStyle(Value cutoff);
 };
 
-Strategy createCleverSelfishStrategy(bool noiseInTransactions, Value cutoff);
+std::unique_ptr<Strategy> createCleverSelfishStrategy(bool noiseInTransactions, Value cutoff);
 
 #endif /* clevel_selfish_miner_hpp */

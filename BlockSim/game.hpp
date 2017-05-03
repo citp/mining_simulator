@@ -9,10 +9,8 @@
 #ifndef game_hpp
 #define game_hpp
 
+#include "blockchain_settings.hpp"
 #include "typeDefs.hpp"
-#include "blockchain.hpp"
-
-#include <iostream>
 
 class Blockchain;
 struct GameResult;
@@ -20,10 +18,9 @@ class MinerGroup;
 struct BlockchainSettings;
 
 struct GameSettings {
-    BlockCount numberOfBlocks;
     BlockchainSettings blockchainSettings;
 };
 
-std::pair< std::unique_ptr<Blockchain>, GameResult> runGame(MinerGroup &minerGroup, GameSettings gameSettings);
+GameResult runGame(MinerGroup &minerGroup, Blockchain &blockchain, GameSettings gameSettings);
 
 #endif /* game_hpp */

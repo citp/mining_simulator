@@ -10,51 +10,47 @@
 #include "blockchain.hpp"
 #include "block.hpp"
 #include "miner.hpp"
-#include "utils.hpp"
 #include "logging.h"
 #include "minerGroup.hpp"
 #include "miner_result.hpp"
 #include "game_result.hpp"
 
+#include "minerStrategies.h"
+#include "strategy.hpp"
 
 #include <cassert>
 #include <iostream>
 
-std::pair<std::unique_ptr<Blockchain>, GameResult> runGame(MinerGroup &minerGroup, GameSettings gameSettings) {
-    //set up the blockchain
-    
-    auto blockchain = std::make_unique<Blockchain>(gameSettings.blockchainSettings);
-    
-    minerGroup.initialize(*blockchain);
-    minerGroup.resetOrder();
+GameResult runGame(MinerGroup &minerGroup, Blockchain &blockchain, GameSettings gameSettings) {
     
     GAMEINFO("Players:" << std::endl << minerGroup);
     
     //mining loop
     
-    BlockTime totalSeconds = gameSettings.numberOfBlocks * gameSettings.blockchainSettings.secondsPerBlock;
+    BlockTime totalSeconds = gameSettings.blockchainSettings.numberOfBlocks * gameSettings.blockchainSettings.secondsPerBlock;
     
-    while (blockchain->getTime() < totalSeconds) {
+    while (blockchain.getTime() < totalSeconds) {
+        BlockTime nextTime = minerGroup.nextEventTime(blockchain);
         
-        BlockTime nextTime = minerGroup.nextEventTime();
+        assert(blockchain.getTime() <= nextTime);
         
-        assert(blockchain->getTime() <= nextTime);
+        blockchain.advanceToTime(nextTime);
         
-        blockchain->advanceToTime(nextTime);
-        
-        assert(blockchain->getTime() == nextTime);
+        assert(blockchain.getTime() == nextTime);
         
         //steps through in second intervals
         //on each step each miner gets a turn
-        COMMENTARY("Round " << blockchain->getTime() << " of the game..." << std::endl);
+        COMMENTARY("Round " << blockchain.getTime() << " of the game..." << std::endl);
         
-        minerGroup.nextMineRound(*blockchain);
+        minerGroup.nextMineRound(blockchain);
+        
+        minerGroup.nextBroadcastRound(blockchain);
         
         COMMENTARY("Publish phase:" << std::endl);
         
-        minerGroup.nextPublishRound(*blockchain);
+        minerGroup.nextPublishRound(blockchain);
         
-        COMMENTARY("Round " << blockchain->getTime() << " over. Current blockchain:" << std::endl);
+        COMMENTARY("Round " << blockchain.getTime() << " over. Current blockchain:" << std::endl);
         COMMENTARYBLOCK (
             blockchain->printBlockchain();
             blockchain->printHeads();
@@ -62,24 +58,33 @@ std::pair<std::unique_ptr<Blockchain>, GameResult> runGame(MinerGroup &minerGrou
         )
     }
     
-    std::map<const Miner *, MinerResult> minerResults;
-    for (const auto &miner : minerGroup.miners) {
-        minerResults[miner.get()] = MinerResult();
-    }
+    minerGroup.finalize(blockchain);
     
-    auto winningChain = blockchain->winningHead().getChain();
+    std::vector<MinerResult> minerResults;
+    minerResults.resize(minerGroup.miners.size());
+    
+    auto &winningBlock = blockchain.winningHead();
+    auto winningChain = winningBlock.getChain();
     int parentCount = 0;
     Value totalValue(0);
-    for (auto block : winningChain) {
-        
-        auto minedBlock = dynamic_cast<const MinedBlock *>(&block.get());
-        if (minedBlock) {
-            if (minedBlock->parent.minedBy(minedBlock->miner)) {
-                parentCount++;
-            }
-            minerResults[&minedBlock->miner].addBlock(minedBlock);
+    for (auto mined : winningChain) {
+        if (mined->height == BlockHeight(0)) {
+            break;
         }
-        totalValue += block.get().value;
+        if (mined->parent->minedBy(mined->miner)) {
+            parentCount++;
+        }
+        auto miner = mined->miner;
+        size_t minerIndex = minerGroup.miners.size();
+        for (size_t ind = 0; ind < minerGroup.miners.size(); ind++) {
+            if (minerGroup.miners[ind].get() == miner) {
+                minerIndex = ind;
+                break;
+            }
+        }
+        
+        minerResults[minerIndex].addBlock(mined);
+        totalValue += mined->value;
     }
     
 //    std::cout << parentCount << " block mined over parent" << std::endl;
@@ -89,17 +94,23 @@ std::pair<std::unique_ptr<Blockchain>, GameResult> runGame(MinerGroup &minerGrou
     BlockCount totalBlocks(0);
     BlockCount finalBlocks(0);
     
-    for (const auto &miner : minerGroup.miners) {
+    for (size_t i = 0; i < minerGroup.miners.size(); i++) {
+        const auto &miner = minerGroup.miners[i];
         GAMEINFO(*miner << " earned:" << minerResults[miner.get()].totalProfit << " mined " << miner->getBlocksMinedTotal() <<" total, of which " << minerResults[miner.get()].blocksInWinningChain << " made it into the final chain" << std::endl);
         totalBlocks += miner->getBlocksMinedTotal();
-        finalBlocks += minerResults[miner.get()].blocksInWinningChain;
+        finalBlocks += minerResults[i].blocksInWinningChain;
     }
     
-    Value moneyLeftAtEnd = blockchain->rem(winningChain[0]);
+    Value moneyLeftAtEnd = blockchain.rem(*winningChain[0]);
     
     GameResult result(minerResults, totalBlocks, finalBlocks, moneyLeftAtEnd, totalValue);
     
-    GAMEINFO("Total blocks mined:" << totalBlocks << " with " << finalBlocks << " making it into the final chain" << std::endl);
+    assert(winningBlock.valueInChain == totalValue);
+    for (size_t i = 0; i < minerGroup.miners.size(); i++) {
+        assert(minerResults[i].totalProfit <= totalValue);
+    }
     
-    return std::make_pair(std::move(blockchain), result);
+    
+    GAMEINFO("Total blocks mined:" << totalBlocks << " with " << finalBlocks << " making it into the final chain" << std::endl);
+    return result;
 }

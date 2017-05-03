@@ -12,19 +12,11 @@
 #include "typeDefs.hpp"
 
 #include <cstddef>
-#include <vector>
 
-class Block;
-
-std::size_t selectRandomIndex(std::size_t size);
-std::size_t selectWeightedIndex(const std::vector<double> &weights);
+std::size_t selectRandomIndex(size_t size);
 double selectRandomChance();
 BlockTime selectMiningOffset(TimeRate mean);
 
 Value valWithNoise(Value minVal, Value maxVal);
-
-Block *largestBlock(const std::vector<Block *> &blocks);
-
-bool valueEquals(Value a, Value b, double epsilon = std::numeric_limits<double>::epsilon());
 
 #endif /* utils_hpp */

@@ -14,31 +14,27 @@
 #include "default_miner.hpp"
 #include "logging.h"
 #include "utils.hpp"
-#include "mining_style.hpp"
 #include "strategy.hpp"
-#include "minerImp.hpp"
 
+#include <assert.h>
 #include <iostream>
+
 
 using std::placeholders::_1;
 using std::placeholders::_2;
 
 Block &blockToMineOn(const Miner &me, const Blockchain &blockchain, double gamma);
 
-Strategy createDefaultSelfishStrategy(bool noiseInTransactions, double gamma) {
+std::unique_ptr<Strategy> createDefaultSelfishStrategy(bool noiseInTransactions, double gamma) {
     auto mineFunc = std::bind(blockToMineOn, _1, _2, gamma);
     auto valueFunc = std::bind(defaultValueInMinedChild, _1, _2, noiseInTransactions);
     
-    auto impCreator = [=]() {
-        return std::make_unique<MinerImp>(mineFunc, valueFunc);
-    };
-    
-    return {"default-selfish", impCreator};
+    return std::make_unique<Strategy>("default-selfish", mineFunc, valueFunc);
 }
 
-Block &blockToMineOn(const Miner &me, const Blockchain &blockchain, double gamma) {
+Block &blockToMineOn(const Miner &me, const Blockchain &chain, double gamma) {
     
-    std::vector<Block*> possiblities = blockchain.oldestPublishedHeads(BlockHeight(0));
+    std::vector<Block*> possiblities = chain.oldestPublishedHeads(chain.getMaxHeightPub());
     if (possiblities.size() == 1) { //no forking
         return *possiblities[0];
     }
@@ -46,7 +42,7 @@ Block &blockToMineOn(const Miner &me, const Blockchain &blockchain, double gamma
         //mineHere should already be set to the side of the fork not the selfish miner
         Block *selfishBlock = nullptr;
         Block *defaultBlock = nullptr;
-        if (ownBlock(me, *possiblities[0])) {
+        if (ownBlock(&me, possiblities[0])) {
             defaultBlock = possiblities[0];
             selfishBlock = possiblities[1];
         } else {
@@ -54,17 +50,15 @@ Block &blockToMineOn(const Miner &me, const Blockchain &blockchain, double gamma
             selfishBlock = possiblities[0];
         }
         
-        if (!ownBlock(me, *selfishBlock)) {
-            ERROR("\n####ERROR IN SELFISH MINING SIM LOGIC###\n\n" << std::endl);
-            return *defaultBlock;
+        assert(ownBlock(&me, defaultBlock));
+        
+        //with chance gamma, mine on the selfish miner's block, otherwise not
+        if (selectRandomChance() < gamma) {
+            return *selfishBlock;
+            
         } else {
-            //with chance gamma, mine on the selfish miner's block, otherwise not
-            if (selectRandomChance() < gamma) {
-                return *selfishBlock;
-                COMMENTARY("Having to mine on selfish block due to gamma. ");
-            } else {
-                return *defaultBlock;
-            }
+            COMMENTARY("Having to mine on selfish block due to gamma. ");
+            return *defaultBlock;
         }
     } else { //lolwut
         ERROR("\n#####ERROR UNFORSEEN CIRCUMSTANCES IN LOGIC FOR SELFISH MINING SIM###\n\n" << std::endl);

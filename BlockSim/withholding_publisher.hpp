@@ -16,18 +16,15 @@ class Miner;
 class WithholdingPublisher : public PublishingStrategy {
     
 private:
-    std::vector< std::unique_ptr<MinedBlock> > unpublishedBlocks;
+    std::vector<std::unique_ptr<Block>> publishBlocks(const Blockchain &blockchain, const Miner &me, std::vector<std::unique_ptr<Block>> &unpublishedBlocks) override;
     
-    BlockTime nextPublishingTime() const override;
-    std::vector<std::unique_ptr<MinedBlock>> publishBlocks(const Blockchain &blockchain, const Miner &me) override;
-    void addNewBlock(std::unique_ptr<MinedBlock> block) override;
+    virtual bool publishTest(const Blockchain &blockchain, Block &block, const Miner &me) const = 0;
     
-    virtual bool publishTest(const Blockchain &blockchain, MinedBlock &block, const Miner &me) const = 0;
+    bool withholdsBlocks() const override { return true; }
     
 public:
     WithholdingPublisher() : PublishingStrategy() {}
     virtual ~WithholdingPublisher() = default;
-    void initialize(const Blockchain &blockchain, const Miner &miner) override;
 };
 
 #endif /* withholding_publisher_hpp */

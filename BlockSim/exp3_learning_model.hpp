@@ -14,12 +14,15 @@
 #include <stdio.h>
 
 class Exp3LearningModel : public LearningModel {
-    void pickNewStrategies(double phi) override;
-    void updateWeights(GameResult &gameResult, Value maxPossibleProfit, double phi) override;
-    void writeWeights(unsigned int gameNum) override;
+private:
+    std::vector<std::vector<StratWeight>> minersWeights;
+    std::vector<std::vector<double>> minersProbabilities;
+    
+    void updateWeights(std::vector<Value> profits, Value maxPossibleProfit, double phi) override;
+    std::vector<double> probabilitiesForMiner(size_t minerIndex, double phi) override;
     
 public:
-    Exp3LearningModel(std::vector<Strategy> &strategies, std::vector<LearningMiner *> learningMiners, std::string resultFolder);
+    Exp3LearningModel(std::vector<std::unique_ptr<LearningStrategy>> &learningStrategies, size_t minerCount, std::string resultFolder);
 };
 
 

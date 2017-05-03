@@ -8,39 +8,71 @@
 
 #include "exp3_learning_model.hpp"
 
-#include "learning_miner.hpp"
-#include "game_result.hpp"
-#include "miner_result.hpp"
+#include "learning_strategy.hpp"
+#include "utils.hpp"
 
-Exp3LearningModel::Exp3LearningModel(std::vector<Strategy> &strategies, std::vector<LearningMiner *> learningMiners, std::string resultFolder) : LearningModel(strategies, learningMiners, resultFolder) {}
+#include <math.h>
+#include <assert.h>
 
-void Exp3LearningModel::pickNewStrategies(double phi) {
-    for (auto &miner : learningMiners) {
-        miner->updateProbabilities(phi);
-        miner->pickRandomStrategy();
+Exp3LearningModel::Exp3LearningModel(std::vector<std::unique_ptr<LearningStrategy>> &learningStrategies_, size_t minerCount_, std::string resultFolder) : LearningModel(learningStrategies_, minerCount_, resultFolder) {
+    std::vector<StratWeight> weights = getCurrentWeights();
+    minersWeights.reserve(minerCount);
+    minersProbabilities.resize(minerCount);
+    std::vector<double> probabilities;
+    for (size_t i = 0; i < minerCount_; i++) {
+        minersWeights.push_back(weights);
     }
 }
 
-void Exp3LearningModel::updateWeights(GameResult &gameResult, Value maxPossibleProfit, double phi) {
-    for (auto &miner : learningMiners) {
-        Value profit = gameResult.minerResults[miner].totalProfit;
-        miner->updateWeights(profit, maxPossibleProfit, phi);
-    }
-}
-
-void Exp3LearningModel::writeWeights(unsigned int gameNum) {
-    std::map<std::string, double> probabilities;
+std::vector<double> Exp3LearningModel::probabilitiesForMiner(size_t minerIndex, double phi) {
     
-    for (auto &miner : learningMiners) {
-        for (auto &learningStrat : miner->customStrats) {
-            if (probabilities.find(learningStrat.strat.name) == probabilities.end()) {
-                probabilities[learningStrat.strat.name] = 0;
-            }
-            probabilities[learningStrat.strat.name] += rawWeight(learningStrat.weight);
+    std::vector<double> probabilities;
+    probabilities.reserve(stratCount);
+    for (size_t strategyIndex = 0; strategyIndex < stratCount; strategyIndex++) {
+        double probability = (1 - phi) * rawWeight(minersWeights[minerIndex][strategyIndex]) + phi / stratCount;
+        
+        assert(probability > 0);
+        assert(!isnan(probability) && !isinf(probability));
+        assert(isfinite(probability) && isnormal(probability));
+        
+        probabilities.push_back(probability);
+    }
+    minersProbabilities[minerIndex] = probabilities;
+    
+    return minersProbabilities[minerIndex];
+}
+
+void Exp3LearningModel::updateWeights(std::vector<Value> profits, Value maxPossibleProfit, double phi) {
+    
+    for (size_t minerIndex = 0; minerIndex < minerCount; minerIndex++) {
+        double profitRatio = valuePercentage(profits[minerIndex], maxPossibleProfit);
+        double normalizedProfit(fmin(profitRatio, 1.0));
+        
+        // Step 4 and Step 5
+        double gHat = normalizedProfit / minersProbabilities[minerIndex][getChosenStrat(minerIndex)];
+        double weightAdjustment = exp((phi * gHat) / stratCount);
+        
+        StratWeight oldWeight = minersWeights[minerIndex][getChosenStrat(minerIndex)];
+        minersWeights[minerIndex][getChosenStrat(minerIndex)] *= StratWeight(weightAdjustment);
+        StratWeight maxWeight = StratWeight(1) - oldWeight + minersWeights[minerIndex][getChosenStrat(minerIndex)];
+        
+        // Normalize weights
+        
+        for (size_t strategyIndex = 0; strategyIndex < stratCount; strategyIndex++) {
+            minersWeights[minerIndex][strategyIndex] /= maxWeight;
         }
     }
     
-    for(auto const &ent1 : probabilities) {
-        outputStreams[ent1.first] << gameNum << " " << ent1.second / learningMiners.size() << std::endl;
+    std::vector<StratWeight> weights;
+    weights.resize(stratCount);
+    
+    for (auto &minerWeights : minersWeights) {
+        for (size_t i = 0; i < stratCount; i++) {
+            weights[i] += minerWeights[i];
+        }
+    }
+    
+    for (size_t i = 0; i < stratCount; i++) {
+        updateWeight(i, weights[i] / StratWeight(minerCount));
     }
 }

@@ -10,32 +10,19 @@
 #define publisher_hpp
 
 #include "typeDefs.hpp"
-#include "minerParameters.h"
 
 #include <vector>
 
-class MinedBlock;
+class Block;
 class Blockchain;
 class Miner;
 
 class PublishingStrategy {
-    
-private:
-    BlockTime publishingTimeReached;
-    
-protected:
-    BlockTime getTimeReached() const;
-    PublishingStrategy() : publishingTimeReached(BlockTime(0)) {}
-    
-    // Vector of blocks should be already topologically sorted
-    virtual std::vector<std::unique_ptr<MinedBlock>> publishBlocks(const Blockchain &blockchain, const Miner &me) = 0;
 public:
-    std::vector<std::unique_ptr<MinedBlock>> publish(const Blockchain &blockchain, const Miner &me);
-    
+    virtual std::vector<std::unique_ptr<Block>> publishBlocks(const Blockchain &blockchain, const Miner &me, std::vector<std::unique_ptr<Block>> &unpublishedBlocks) = 0;
     virtual ~PublishingStrategy();
-    virtual void initialize(const Blockchain &, const Miner &);
-    virtual BlockTime nextPublishingTime() const = 0;
-    virtual void addNewBlock(std::unique_ptr<MinedBlock> block) = 0;
+    
+    virtual bool withholdsBlocks() const = 0;
 };
 
 #endif /* publisher_hpp */

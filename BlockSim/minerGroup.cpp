@@ -9,74 +9,124 @@
 #include "minerGroup.hpp"
 
 #include "miner.hpp"
-#include "learning_miner.hpp"
-#include "default_miner.hpp"
-#include "minerParameters.h"
-#include "publishing_strategy.hpp"
 #include "blockchain.hpp"
 #include "block.hpp"
-#include "mining_style.hpp"
-#include "game_result.hpp"
-#include "miner_result.hpp"
-#include "minerImp.hpp"
 
 #include <cassert>
-#include <sstream>
+#include <iostream>
 
+constexpr auto maxTime = BlockTime(std::numeric_limits<BlockTime>::max());
 
-bool miningSort(const std::unique_ptr<Miner>& miner1, const std::unique_ptr<Miner>& miner2);
-bool miningSort(const std::unique_ptr<Miner>& miner1, const std::unique_ptr<Miner>& miner2)  {
+bool miningSort(const Miner *miner1, const Miner *miner2);
+bool miningSort(const Miner *miner1, const Miner *miner2)  {
+    
     auto miner1Time = miner1->nextMiningTime();
     auto miner2Time = miner2->nextMiningTime();
-    if (miner1Time < miner2Time) {
-        return false;
-    } else if (miner1Time > miner2Time) {
-        return true;
-    } else {
-        return miner1->params.number < miner2->params.number;
-    }
+    return miner1Time > miner2Time;
 }
 
-MinerGroup::MinerGroup(std::vector<std::unique_ptr<Miner>> miners_) : miners(std::move(miners_)), publisherQueue(miners) {}
+bool broadcastSort(const std::unique_ptr<Block> &block1, const std::unique_ptr<Block> &block2);
+bool broadcastSort(const std::unique_ptr<Block> &block1, const std::unique_ptr<Block> &block2)  {
+    return block1->getTimeBroadcast() > block2->getTimeBroadcast();
+}
 
-void MinerGroup::initialize(const Blockchain &blockchain) {
+
+MinerGroup::MinerGroup(std::vector<std::unique_ptr<Miner>> miners_) : modifiedSinceLastPublish(false), miners(std::move(miners_)) {
     for (auto &miner : miners) {
-        miner->initialize(blockchain);
+        miningQueue.push_back(miner.get());
+        sleepingPublishers.insert(miner.get());
     }
-    std::make_heap(begin(miners), end(miners), miningSort);
 }
 
-BlockTime MinerGroup::nextEventTime() {
-    auto nextMining = miners.front()->nextMiningTime();
-    auto nextPublish = publisherQueue.nextPublishingTime();
-    return std::min(nextMining, nextPublish);}
+void MinerGroup::reset(const Blockchain &chain) {
+    for (auto &miner : miners) {
+        miner->reset(chain);
+    }
+    broadcastQueue.clear();
+    
+    std::make_heap(begin(miningQueue), end(miningQueue), miningSort);
+}
 
-void MinerGroup::nextMineRound(const Blockchain &blockchain) {
-    assert(miners.front()->nextMiningTime() >= blockchain.getTime());
-    while (miners.front()->nextMiningTime() == blockchain.getTime()) {
-        std::pop_heap(begin(miners), end(miners), miningSort);
+void MinerGroup::finalize(Blockchain &chain) {
+    for (auto &miner : miners) {
+        miner->finalize(chain);
+    }
+}
+
+BlockTime MinerGroup::nextBroadcastTime() const {
+    if (!broadcastQueue.empty()) {
+        return broadcastQueue.front()->getTimeBroadcast();
+    } else {
+        return maxTime;
+    }
+}
+
+BlockTime MinerGroup::nextEventTime(const Blockchain &chain) {
+    
+    auto nextMining = miningQueue.front()->nextMiningTime();
+    
+    if (modifiedSinceLastPublish) {
+        return chain.getTime() + BlockTime(1);
+    } else {
+        return std::min(nextBroadcastTime(), nextMining);
+    }
+}
+
+void MinerGroup::nextMineRound(Blockchain &blockchain) {
+    assert(miningQueue.front()->nextMiningTime() >= blockchain.getTime());
+    
+    while (miningQueue.front()->nextMiningTime() == blockchain.getTime()) {
+        std::pop_heap(begin(miningQueue), end(miningQueue), miningSort);
+        Miner *miner = miningQueue.back();
+        auto wantedBroadcast = miner->wantsToBroadcast();
+        auto block = miner->miningPhase(blockchain);
+        if (block) {
+            broadcastQueue.push_back(std::move(block));
+            std::push_heap(begin(broadcastQueue), end(broadcastQueue), broadcastSort);
+        }
+        if (miner->wantsToBroadcast() && !wantedBroadcast) {
+            sleepingPublishers.erase(miner);
+            activePublishers.insert(miner);
+        }
         
-        // Must update order of publishing queue
-        publisherQueue.removePublisher(miners.back().get());
-        // Mine for blocks
-        miners.back()->miningPhase(blockchain);
-        
-        publisherQueue.pushPublisher(miners.back().get());
-        
-        std::push_heap(begin(miners), end(miners), miningSort);
+        std::push_heap(begin(miningQueue), end(miningQueue), miningSort);
+    }
+    modifiedSinceLastPublish = true;
+}
+
+void MinerGroup::nextBroadcastRound(Blockchain &blockchain) {
+    while (!broadcastQueue.empty() && broadcastQueue.front()->getTimeBroadcast() == blockchain.getTime()) {
+        std::pop_heap(begin(broadcastQueue), end(broadcastQueue), broadcastSort);
+        blockchain.publishBlock(std::move(broadcastQueue.back()));
+        broadcastQueue.pop_back();
     }
 }
 
 void MinerGroup::nextPublishRound(Blockchain &blockchain) {
-    assert(publisherQueue.nextPublishingTime() >= blockchain.getTime());
-    while (publisherQueue.nextPublishingTime() == blockchain.getTime()) {
-        auto firstPublisher = publisherQueue.popNextPublisher();
-        // Publish blocks
-        firstPublisher->publishPhase(blockchain);
-        publisherQueue.pushPublisher(firstPublisher);
+    if (modifiedSinceLastPublish) {
+        bool wasModified = true;
+        while (wasModified) {
+            wasModified = false;
+            for (auto it = begin(activePublishers); it != end(activePublishers); ) {
+                auto blocksToBroadcast = (*it)->broadcastPhase(blockchain);
+                for (auto &block : blocksToBroadcast) {
+                    broadcastQueue.push_back(std::move(block));
+                    std::push_heap(begin(broadcastQueue), end(broadcastQueue), broadcastSort);
+                    wasModified = true;
+                }
+                if (!(*it)->wantsToBroadcast()) {
+                    sleepingPublishers.insert(*it);
+                    it = activePublishers.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+            nextBroadcastRound(blockchain);
+        }
     }
+    
+    modifiedSinceLastPublish = false;
 }
-
 
 std::ostream& operator<<(std::ostream& os, const MinerGroup& minerGroup) {
     for (const auto &miner : minerGroup.miners) {
@@ -86,6 +136,14 @@ std::ostream& operator<<(std::ostream& os, const MinerGroup& minerGroup) {
 }
 
 void MinerGroup::resetOrder() {
-    std::make_heap(begin(miners), end(miners), miningSort);
-    publisherQueue = PublisherQueue(miners);
+    std::make_heap(begin(miningQueue), end(miningQueue), miningSort);
+    activePublishers.clear();
+    sleepingPublishers.clear();
+    for (auto &miner : miners) {
+        if (miner->wantsToBroadcast()) {
+            activePublishers.insert(miner.get());
+        } else {
+            sleepingPublishers.insert(miner.get());
+        }
+    }
 }

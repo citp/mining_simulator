@@ -10,29 +10,18 @@
 #define multiplicative_weights_learning_model_hpp
 
 #include "learning_model.hpp"
-#include "strategy.hpp"
 
 #include <stdio.h>
 
 class MultiplicativeWeightsLearningModel : public LearningModel {
 private:
-    struct StratMW {
-        const Strategy strat;
-        
-        StratWeight weight;  //used for multiplicative weights to decide how to play
-        Value profits; //used to calculate the value of this strat at the end
-        MinerCount minersUsing;
-        
-        StratMW(Strategy strat, StratWeight weight);
-    };
+    std::vector<double> probabilities;
     
-    std::vector<StratMW> customStrats;
-
+    std::vector<double> probabilitiesForMiner(size_t minerIndex, double phi) override;
+    void updateWeights(std::vector<Value> profits, Value maxPossibleProfit, double phi) override;
 public:
-    MultiplicativeWeightsLearningModel(std::vector<Strategy> &strategies, std::vector<LearningMiner *> learningMiners, std::string resultFolder);
-    void pickNewStrategies(double phi) override;
-    void updateWeights(GameResult &gameResult, Value maxPossibleProfit, double phi) override;
-    void writeWeights(unsigned int gameNum) override;
+    MultiplicativeWeightsLearningModel(std::vector<std::unique_ptr<LearningStrategy>> &learningStrategies, size_t minerCount, std::string resultFolder);
+    
 };
 
 #endif /* multiplicative_weights_learning_model_hpp */

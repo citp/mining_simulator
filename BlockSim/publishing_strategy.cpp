@@ -15,26 +15,3 @@
 #include <assert.h>
 
 PublishingStrategy::~PublishingStrategy() = default;
-
-std::vector<std::unique_ptr<MinedBlock>> PublishingStrategy::publish(const Blockchain &blockchain, const Miner &me) {
-    assert(blockchain.getTime() <= nextPublishingTime());
-    assert(publishingTimeReached <= blockchain.getTime());
-    
-    std::vector<std::unique_ptr<MinedBlock>> blocksToPublish = publishBlocks(blockchain, me);
-    
-    for (const auto &block : blocksToPublish) {
-        assert(block);
-    }
-    
-    publishingTimeReached = blockchain.getTime() + BlockTime(1);
-    
-    return blocksToPublish;
-}
-
-BlockTime PublishingStrategy::getTimeReached() const {
-    return publishingTimeReached;
-}
-
-void PublishingStrategy::initialize(const Blockchain &, const Miner &) {
-    publishingTimeReached = BlockTime(0);
-}

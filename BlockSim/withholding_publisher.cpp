@@ -12,20 +12,9 @@
 
 #include <assert.h>
 
-BlockTime WithholdingPublisher::nextPublishingTime() const {
-    if (unpublishedBlocks.size() > 0) {
-        return getTimeReached() + BlockTime(1);
-    } else {
-        return BlockTime(std::numeric_limits<unsigned long>::max());
-    }
-}
 
-void WithholdingPublisher::addNewBlock(std::unique_ptr<MinedBlock> block) {
-    unpublishedBlocks.push_back(std::move(block));
-}
-
-std::vector<std::unique_ptr<MinedBlock>> WithholdingPublisher::publishBlocks(const Blockchain &blockchain, const Miner &me) {
-    std::vector<std::unique_ptr<MinedBlock>> blocksToPublish;
+std::vector<std::unique_ptr<Block>> WithholdingPublisher::publishBlocks(const Blockchain &blockchain, const Miner &me, std::vector<std::unique_ptr<Block>> &unpublishedBlocks) {
+    std::vector<std::unique_ptr<Block>> blocksToPublish;
     bool donePublishing = false;
     while (!donePublishing) {
         donePublishing = true;
@@ -39,11 +28,6 @@ std::vector<std::unique_ptr<MinedBlock>> WithholdingPublisher::publishBlocks(con
             }
         }
     }
-    std::sort(begin(blocksToPublish), end(blocksToPublish), [](const std::unique_ptr<MinedBlock> &a, const std::unique_ptr<MinedBlock> &b) { return a->height < b->height; });
+    std::sort(begin(blocksToPublish), end(blocksToPublish), [](const std::unique_ptr<Block> &a, const std::unique_ptr<Block> &b) { return a->height < b->height; });
     return blocksToPublish;
-}
-
-void WithholdingPublisher::initialize(const Blockchain &blockchain, const Miner &miner) {
-    PublishingStrategy::initialize(blockchain, miner);
-    unpublishedBlocks.clear();
 }

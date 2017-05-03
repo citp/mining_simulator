@@ -17,5 +17,6 @@
 #include "lazy_fork_miner.hpp"
 #include "gap_miner.hpp"
 #include "default_selfish_miner.hpp"
+#include "function_fork_selfish_miner.hpp"
 
 #endif /* minerStrategies_h */

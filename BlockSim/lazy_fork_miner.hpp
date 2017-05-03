@@ -13,6 +13,6 @@
 
 class Strategy;
 
-Strategy createLazyForkStrategy(bool atomic);
+std::unique_ptr<Strategy> createLazyForkStrategy(bool atomic);
 
 #endif /* undercut_miner_hpp */

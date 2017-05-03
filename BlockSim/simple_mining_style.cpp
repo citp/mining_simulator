@@ -15,31 +15,20 @@
 #include <assert.h>
 #include <cmath>
 
-std::unique_ptr<MinedBlock> SimpleMiningStyle::attemptToMineImp(const Blockchain &blockchain, Miner &me) {
-    assert(_hasInitializedTime);
+SimpleMiningStyle::SimpleMiningStyle(ParentSelectorFunc parentSelectorFunc_, BlockValueFunc blockValueFunc_) : MiningStyle(parentSelectorFunc_, blockValueFunc_) {}
+
+std::pair<std::unique_ptr<Block>, Value> SimpleMiningStyle::attemptToMine(Blockchain &blockchain, Miner *miner, BlockTime lastTimePaid) {
+    auto block = createBlock(blockchain, *miner);
     
-    auto block = createBlock(blockchain, me);
+    Value cost = resetMiningCost(*miner, blockchain, lastTimePaid);
     
-    _nextBlockTime = generateNewMiningTime(blockchain, me);
-    
-    return block;
+    return std::make_pair(std::move(block), cost);
 }
 
-void SimpleMiningStyle::initialize(const Blockchain &blockchain, const Miner &miner) {
-    MiningStyle::initialize(blockchain, miner);
-    _nextBlockTime = generateNewMiningTime(blockchain, miner);
-    _hasInitializedTime = true;
+BlockTime SimpleMiningStyle::nextMiningTime(const Blockchain &chain, const Miner &miner) const {
+    return chain.getTime() + BlockTime(1) + selectMiningOffset(chain.chanceToWin(miner.params.hashRate));
 }
 
-BlockTime SimpleMiningStyle::nextMiningTime() const {
-    assert(_hasInitializedTime);
-    return _nextBlockTime;
-}
-
-Value SimpleMiningStyle::moneySpentMining(const Miner &miner) const {
-    return miner.params.costPerSecond * getTimeReached();
-}
-
-BlockTime SimpleMiningStyle::generateNewMiningTime(const Blockchain &blockchain, const Miner &miner) {
-    return getTimeReached() + BlockTime(1) + selectMiningOffset(blockchain.chanceToWin(miner.params.hashRate));
+Value SimpleMiningStyle::resetMiningCost(const Miner &miner, const Blockchain &chain, BlockTime lastTimePaid) {
+    return miner.params.costPerSecond * (chain.getTime() - lastTimePaid);
 }

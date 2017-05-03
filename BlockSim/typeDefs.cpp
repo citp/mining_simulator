@@ -72,7 +72,7 @@ TimeRate operator/ (const HashRate& y, BlockRate x) {
 
 // (1 / block) * money = (money / block)
 ValueRate operator* (TimeRate x, const Value& y) {
-    return ValueRate(rawValue(y) * rawRate(x));
+    return ValueRate(static_cast<ValueType>(rawValue(y) * rawRate(x)));
 }
 
 // (money / second) * (seconds / block) = (money / block)
@@ -128,3 +128,7 @@ WeightType rawWeight(StratWeight weight) {
 }
 
 #endif
+
+double valuePercentage(Value a, Value b) {
+    return static_cast<double>(rawValue(a)) / static_cast<double>(rawValue(b));
+}

@@ -10,35 +10,39 @@
 #define minerGroup_hpp
 
 #include "typeDefs.hpp"
-#include "publisherQueue.hpp"
-#include "strategy.hpp"
 
 #include <vector>
-#include <fstream>
-#include <map>
+#include <set>
+#include <unordered_set>
 
 class Miner;
-class LearningMiner;
 class Blockchain;
-class MultiplicativeWeights;
-struct GameResult;
-class Strategy;
-
+class Block;
 
 class MinerGroup {
+private:
+    bool modifiedSinceLastPublish;
+    BlockTime nextBroadcastTime() const;
 public:
     MinerGroup(std::vector<std::unique_ptr<Miner>> miners);
     
-    void initialize(const Blockchain &blockchain);
+    void finalize(Blockchain &chain);
+    void reset(const Blockchain &chain);
     
-    std::vector<std::unique_ptr<Miner>> miners;
-    PublisherQueue publisherQueue;
+    const std::vector<std::unique_ptr<Miner>> miners;
+    
+    std::vector<Miner *> miningQueue;
+    std::vector<std::unique_ptr<Block>> broadcastQueue;
+    
+    std::unordered_set<Miner *> activePublishers;
+    std::unordered_set<Miner *> sleepingPublishers;
     
     friend std::ostream& operator<<(std::ostream& os, const MinerGroup& minerGroup);
     
-    BlockTime nextEventTime();
-    void nextMineRound(const Blockchain &blockchain);
+    BlockTime nextEventTime(const Blockchain &chain);
+    void nextMineRound(Blockchain &blockchain);
     void nextPublishRound(Blockchain &blockchain);
+    void nextBroadcastRound(Blockchain &blockchain);
     
     void resetOrder();
 };

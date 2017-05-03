@@ -14,9 +14,7 @@
 #include "minerParameters.h"
 #include "miner.hpp"
 #include "default_miner.hpp"
-#include "mining_style.hpp"
 #include "strategy.hpp"
-#include "minerImp.hpp"
 
 #include <assert.h>
 #include <iostream>
@@ -24,27 +22,24 @@
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-Strategy createCleverSelfishStrategy(bool noiseInTransactions, Value cutoff) {
+std::unique_ptr<Strategy> createCleverSelfishStrategy(bool noiseInTransactions, Value cutoff) {
     auto valueFunc = std::bind(defaultValueInMinedChild, _1, _2, noiseInTransactions);
     
-    auto impCreator = [=]() {
-        return std::make_unique<MinerImp>(selfishBlockToMineOn, valueFunc, std::make_unique<CleverSelfishPublishingStyle>(cutoff));
-    };
-    
-    return {"clever-selfish", impCreator};
+    return std::make_unique<Strategy>("clever-selfish", selfishBlockToMineOn, valueFunc, std::make_unique<CleverSelfishPublishingStyle>(cutoff));
 }
 
 CleverSelfishPublishingStyle::CleverSelfishPublishingStyle(Value cutoff_) : SelfishPublishingStyle(), cutoff(cutoff_) {}
 
-BlockHeight CleverSelfishPublishingStyle::heightToPublish(const Blockchain &blockchain, const Miner &me) const {
-    if(selfishChain.back()->height == blockchain.getMaxHeightPub() + BlockHeight(1) &&
-       selfishChain.back()->value >= cutoff &&
-       selfishChain.size() == 1) {
+BlockHeight CleverSelfishPublishingStyle::heightToPublish(const Blockchain &blockchain, const Miner &me, std::vector<std::unique_ptr<Block>> &unpublishedBlocks) const {
+    assert(unpublishedBlocks.back());
+    if(unpublishedBlocks.back()->height == blockchain.getMaxHeightPub() + BlockHeight(1) &&
+       unpublishedBlocks.back()->value >= cutoff &&
+       unpublishedBlocks.size() == 1) {
         //finding a block. Normally hide (point of selfish mining) Might decide to normal mine if big block
         //(not worth the risk of using it to selfish mine)
         COMMENTARY("Miner " << me.params.name << " publishes selfish chain. Too large a block to selfishly mine." << std::endl);
-        return selfishChain.back()->height;
+        return unpublishedBlocks.back()->height;
     } else {
-        return SelfishPublishingStyle::heightToPublish(blockchain, me);
+        return SelfishPublishingStyle::heightToPublish(blockchain, me, unpublishedBlocks);
     }
 }

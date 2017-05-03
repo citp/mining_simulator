@@ -15,53 +15,45 @@
 
 class Block;
 class GenesisBlock;
-class MinedBlock;
 class Miner;
+struct BlockchainSettings;
 
-struct BlockchainSettings {
-    BlockRate secondsPerBlock;
-    ValueRate transactionFeeRate;
-    BlockValue blockReward;
-};
-
-class Blockchain {
-    const std::unique_ptr<GenesisBlock> genesis;
-    
-    std::vector<Block *> oldHeads;
-    std::deque<Block *> heads;
-    
+class Blockchain {    
     Value valueNetworkTotal;
     BlockTime timeInSecs;
     BlockRate secondsPerBlock;
     ValueRate transactionFeeRate;
     
-    BlockHeight _maxHeightPub;
-    std::vector<std::vector<Block *>> _smallestBlocks; // cache smallest blocks of a given height
-    std::deque<std::vector<Block *>> _recentBlocksOfHeight;
     
-private:
-    void newBlockAdded(Block *block);
+    BlockHeight _maxHeightPub;
+    std::vector<std::vector<size_t>> _blocksIndex;
+    std::vector<std::vector<Block *>> _smallestBlocks; // cache smallest blocks of a given height
+    std::vector<std::unique_ptr<Block>> _blocks;
+    
+    std::vector<std::unique_ptr<Block>> _oldBlocks;
+    
+    Block *blockByMinerAtHeight(BlockHeight height, const Miner &miner) const;
     
 public:
     Blockchain(BlockchainSettings blockchainSettings);
-    const std::deque<Block *> &getHeads() const;
-    const std::vector<Block *> &getOldHeads() const;
-    const std::vector<Block *> getHeadsOfHeight(BlockHeight height) const;
     
-    void publishBlock(std::unique_ptr<MinedBlock> block);
+    std::unique_ptr<Block> createBlock(const Block *parent, const Miner *miner, Value value);
+    void reset(BlockchainSettings blockchainSettings);
+
+    void publishBlock(std::unique_ptr<Block> block);
     
     
     void printBlockchain() const;
     void printHeads() const;
-    void printOldHeads() const;
     
     const Block &winningHead() const;
+    
+    BlockCount blocksOfHeight(BlockHeight height) const;
     
     const std::vector<Block *> oldestPublishedHeads(BlockHeight height) const;
     Block &oldestPublishedHead(BlockHeight height) const;
     Block &smallestHead(BlockHeight age) const;
     
-    void tick(BlockTime timePassed);
     void advanceToTime(BlockTime time);
     
     inline BlockHeight getMaxHeightPub() const {

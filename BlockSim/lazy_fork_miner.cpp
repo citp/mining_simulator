@@ -11,15 +11,10 @@
 #include "block.hpp"
 #include "blockchain.hpp"
 #include "miner.hpp"
-#include "logging.h"
-#include "utils.hpp"
 #include "default_miner.hpp"
 #include "publishing_strategy.hpp"
-#include "mining_style.hpp"
 #include "strategy.hpp"
-#include "minerImp.hpp"
 
-#include <iostream>
 #include <cassert>
 
 using std::placeholders::_1;
@@ -29,7 +24,7 @@ Value lazyValueInMinedChild(const Blockchain &blockchain, const Block &mineHere)
 Block &lazyBlockToMineOnAtomic(const Miner &me, const Blockchain &chain);
 Block &lazyBlockToMineOnNonAtomic(const Miner &me, const Blockchain &chain);
 
-Strategy createLazyForkStrategy(bool atomic) {
+std::unique_ptr<Strategy> createLazyForkStrategy(bool atomic) {
     
     ParentSelectorFunc mineFunc;
     
@@ -40,26 +35,30 @@ Strategy createLazyForkStrategy(bool atomic) {
     }
     auto valueFunc = lazyValueInMinedChild;
     
-    auto impCreator = [=]() {
-        return std::make_unique<MinerImp>(mineFunc, valueFunc);
-    };
-    
-    return {"lazy-fork", impCreator};
+    return std::make_unique<Strategy>("lazy-fork", mineFunc, valueFunc);
 }
 
 Block &lazyBlockToMineOnAtomic(const Miner &me, const Blockchain &chain) {
-    if (chain.getMaxHeightPub() == BlockHeight(0) || chain.rem(chain.most(BlockHeight(0), me)) > chain.gap(BlockHeight(0))) {
-        return chain.most(BlockHeight(0), me);
+    if (chain.getMaxHeightPub() == BlockHeight(0)) {
+        return chain.most(chain.getMaxHeightPub(), me);
+    }
+    
+    if (chain.rem(chain.most(chain.getMaxHeightPub(), me)) >= chain.gap(chain.getMaxHeightPub())) {
+        return chain.most(chain.getMaxHeightPub(), me);
     } else {
-        return chain.most(BlockHeight(1), me);
+        return chain.most(chain.getMaxHeightPub() - BlockHeight(1), me);
     }
 }
 
 Block &lazyBlockToMineOnNonAtomic(const Miner &, const Blockchain &chain) {
-    if (chain.getMaxHeightPub() == BlockHeight(0) || chain.rem(chain.smallestHead(BlockHeight(0))) > chain.gap(BlockHeight(0))) {
-        return chain.smallestHead(BlockHeight(0));
+    if (chain.getMaxHeightPub() == BlockHeight(0)) {
+        return chain.smallestHead(chain.getMaxHeightPub());
+    }
+    
+    if (chain.rem(chain.smallestHead(chain.getMaxHeightPub())) >= chain.gap(chain.getMaxHeightPub())) {
+        return chain.smallestHead(chain.getMaxHeightPub());
     } else {
-        return chain.smallestHead(BlockHeight(1));
+        return chain.smallestHead(chain.getMaxHeightPub() - BlockHeight(1));
     }
 }
 

@@ -13,6 +13,6 @@
 
 class Strategy;
 
-Strategy createDefaultSelfishStrategy(bool noiseInTransactions, double gamma);
+std::unique_ptr<Strategy> createDefaultSelfishStrategy(bool noiseInTransactions, double gamma);
 
 #endif /* default_selfish_miner_hpp */

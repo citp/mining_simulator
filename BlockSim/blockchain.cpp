@@ -9,174 +9,99 @@
 #include "blockchain.hpp"
 #include "utils.hpp"
 #include "block.hpp"
+#include "blockchain_settings.hpp"
 
-#include <iostream>
-#include <algorithm>
 #include <cassert>
-#include <cmath>
-#include <limits>
 #include <unordered_set>
-
-#define HEAD_AGE BlockHeight(3)          //age of heads kept in the heads queue before moving them to the oldHeads queue
+#include <iostream>
 
 Blockchain::Blockchain(BlockchainSettings blockchainSettings) :
-    genesis(std::make_unique<GenesisBlock>(blockchainSettings.blockReward)),
     valueNetworkTotal(0),
     timeInSecs(0),
     secondsPerBlock(blockchainSettings.secondsPerBlock),
     transactionFeeRate(blockchainSettings.transactionFeeRate),
     _maxHeightPub(0)
 {
-    genesis->publish(BlockTime(0));
-    heads.push_back(genesis.get());
-    _smallestBlocks.push_back({genesis.get()});
-    std::vector<Block *> newBlocks;
-    newBlocks.push_back(genesis.get());
-    _recentBlocksOfHeight.push_front(newBlocks);
-    assert(heads[0] != nullptr);
+    _blocks.reserve(rawCount(blockchainSettings.numberOfBlocks) * 2);
+    _blocksIndex.resize(rawCount(blockchainSettings.numberOfBlocks) * 2);
+    _smallestBlocks.resize(rawCount(blockchainSettings.numberOfBlocks) * 2);
+    reset(blockchainSettings);
 }
 
-const std::deque<Block *> &Blockchain::getHeads() const {
-    return heads;
-}
-
-const std::vector<Block *> &Blockchain::getOldHeads() const {
-    return oldHeads;
-}
-
-void Blockchain::newBlockAdded(Block *block) {
-    assert(block->height <= _maxHeightPub + BlockHeight(1));
-    if (block->height > _maxHeightPub) {
-        _maxHeightPub = block->height;
-        _smallestBlocks.push_back({block});
-        std::vector<Block *> newBlocks;
-        newBlocks.push_back(block);
-        _recentBlocksOfHeight.push_front(newBlocks);
-        if (_recentBlocksOfHeight.size() > rawHeight(HEAD_AGE)) {
-            _recentBlocksOfHeight.pop_back();
-        }
-    } else {
-        HeightType height = rawHeight(block->height);
-        if (valueEquals(block->value, _smallestBlocks[height][0]->value)) {
-            _smallestBlocks[height].push_back(block);
-        } else if (block->value < _smallestBlocks[height][0]->value) {
-            _smallestBlocks[height].clear();
-            _smallestBlocks[height].push_back(block);
-        }
-        
-        if (block->height >= _maxHeightPub - HEAD_AGE) {
-            _recentBlocksOfHeight[rawHeight(_maxHeightPub - block->height)].push_back(block);
-        }
+std::unique_ptr<Block> Blockchain::createBlock(const Block *parent, const Miner *miner, Value value) {
+    Value txFees = value - parent->nextBlockReward();
+    if (_oldBlocks.size() == 0) {
+        return std::make_unique<Block>(parent, miner, getTime(), txFees);
     }
+    
+    auto block = std::move(_oldBlocks.back());
+    _oldBlocks.pop_back();
+    block->reset(parent, miner, getTime(), txFees);
+    return block;
 }
 
-void Blockchain::publishBlock(std::unique_ptr<MinedBlock> block) {
+void Blockchain::reset(BlockchainSettings blockchainSettings) {
+    valueNetworkTotal = 0;
+    timeInSecs = BlockTime(0);
+    secondsPerBlock = blockchainSettings.secondsPerBlock;
+    transactionFeeRate = blockchainSettings.transactionFeeRate;
+    _maxHeightPub = BlockHeight(0);
+    _oldBlocks.reserve(_oldBlocks.size() + _blocks.size());
+    for (auto &block : _blocks) {
+        _oldBlocks.push_back(std::move(block));
+    }
+    _blocks.clear();
+    _smallestBlocks[0].clear();
+    _blocksIndex[0].clear();
+    auto genesis = std::make_unique<Block>(blockchainSettings.blockReward);
+    _smallestBlocks[0].push_back(genesis.get());
+    _blocksIndex[0].push_back(_blocks.size());
+    _blocks.push_back(std::move(genesis));
+}
+
+void Blockchain::publishBlock(std::unique_ptr<Block> block) {
     assert(block);
+    assert(block->height <= _maxHeightPub + BlockHeight(1));
     
-    block->publish(timeInSecs);
+    HeightType height = rawHeight(block->height);
     
-    newBlockAdded(block.get());
-    
-    size_t headsSize = heads.size();
-    size_t oldHeadsSize = oldHeads.size();
-    
-    bool replacedHead = false;
-    
-    heads.push_back(block.get());
-    bool startAging = getMaxHeightPub() > HEAD_AGE;
-    for(auto it = heads.begin(); it != heads.end();)
-    {
-        auto current = *it;
-        if (&block->parent == current) {
-            it = heads.erase(it);
-            replacedHead = true;
-        } else if (startAging && current->height < (getMaxHeightPub() - HEAD_AGE)) {
-            oldHeads.push_back(*it);
-            it = heads.erase(it);
-        } else {
-            ++it;
+    if (block->height > _maxHeightPub) {
+        _blocksIndex[height].clear();
+        _smallestBlocks[height].clear();
+        _smallestBlocks[height].push_back(block.get());
+        _maxHeightPub = block->height;
+    } else {
+        std::vector<Block *> &smallestVector = _smallestBlocks[height];
+        
+        if (block->value < smallestVector.front()->value) {
+            smallestVector.clear();
+            smallestVector.push_back(block.get());
+        } else if (block->value == smallestVector.front()->value) {
+            smallestVector.push_back(block.get());
         }
     }
-    
-    assert(headsSize + oldHeadsSize + (replacedHead ? 0 : 1) == heads.size() + oldHeads.size());
-    assert(heads.size() > 0);
-    
-    block->parent.addChild(std::move(block));
 
-    for (const auto &head : heads) {
-        assert(!startAging || head->height >= (getMaxHeightPub() - HEAD_AGE));
-    }
+    _blocksIndex[height].push_back(_blocks.size());
+    _blocks.push_back(std::move(block));
 }
 
-
-// Following comment kept for the records. Now the same is acheived by keeping a set of already printed blocks here
-
-//what's the purpose of this? I'll tell you: all the wasPrinted and clear printing stuff is here so when you
-//print the block chain, you see all the heads, but once they converge onto a single path, it's only
-//printed once. (otherwise you'd head num_heads*blockchain.length prints)
-
-void Blockchain::printBlockchain() const {
-    std::unordered_set<const Block *> printedBlocks;
-    for (auto current : heads) {
-        auto chain = current->getChain();
-        for (const Block &block : chain) {
-            if (printedBlocks.find(&block) == end(printedBlocks)) {
-                std::cout << block;
-                printedBlocks.insert(&block);
-            } else {
-                break;
-            }
-        }
-        std::cout << std::endl;
-    }
-}
-
-void Blockchain::printHeads() const {
-    std::cout << "heads:" << std::endl;
-    for (auto current : heads) {
-        std::cout << *current << std::endl;
-    }
-    std::cout << "end heads." << std::endl;
-}
-
-void Blockchain::printOldHeads() const {
-    std::cout << "Old heads:" << std::endl;
-    for (auto &current : oldHeads) {
-        std::cout << *current << std::endl;
-    }
-    std::cout << "end old heads." << std::endl;
-}
-
-const std::vector<Block *> Blockchain::getHeadsOfHeight(BlockHeight height) const {
-    std::vector<Block *> blocks;
-    for (Block *head : getHeads()) {
-        if (head->height < height) {
-            continue;
-        }
-        blocks.push_back(&head->getAncestorOfHeight(height));
-    }
-    assert(blocks.size() != 0);
-    return blocks;
+BlockCount Blockchain::blocksOfHeight(BlockHeight height) const {
+    return BlockCount(_blocksIndex[rawHeight(height)].size());
 }
 
 const std::vector<Block *> Blockchain::oldestPublishedHeads(BlockHeight height) const {
-    auto blocks = getHeadsOfHeight(getMaxHeightPub() - height);
-    BlockTime timePublished(std::numeric_limits<BlockTime>::max());
-    for (const auto &block : blocks) {
-        if (block->getTimePublished() < timePublished) {
-            timePublished = block->getTimePublished();
-        }
+    BlockTime minTimePublished(std::numeric_limits<BlockTime>::max());
+    for (size_t index : _blocksIndex[rawHeight(height)]) {
+        minTimePublished = std::min(_blocks[index]->getTimeBroadcast(), minTimePublished);
     }
     
     std::vector<Block *> possiblities;
-    for (const auto &block : blocks) {
-        if (block->getTimePublished() <= timePublished) {
-            possiblities.push_back(block);
+    for (size_t index : _blocksIndex[rawHeight(height)]) {
+        if (_blocks[index]->getTimeBroadcast() == minTimePublished) {
+            possiblities.push_back(_blocks[index].get());
         }
     }
-    
     assert(possiblities.size() > 0);
-    
     return possiblities;
 }
 
@@ -185,63 +110,75 @@ Block &Blockchain::oldestPublishedHead(BlockHeight height) const {
     return *possiblities[selectRandomIndex(possiblities.size())];
 }
 
-Block &Blockchain::most(BlockHeight age, const Miner &miner) const {
-    assert(age < HEAD_AGE);
-    for (auto &block : _recentBlocksOfHeight[rawHeight(age)]) {
-        if (block->minedBy(miner)) {
-            return *block;
-        }
-    }
-    
-    return smallestHead(age);
-}
-
-Block &Blockchain::oldest(BlockHeight age, const Miner &miner) const {
-    assert(age < HEAD_AGE);
-    for (auto &block : _recentBlocksOfHeight[rawHeight(age)]) {
-        if (block->minedBy(miner)) {
-            return *block;
-        }
-    }
-    
-    return oldestPublishedHead(age);
-}
-
-
-Block &Blockchain::smallestHead(BlockHeight age) const {
-    size_t height = rawHeight(getMaxHeightPub() - age);
-    Block *block = _smallestBlocks[height][selectRandomIndex(_smallestBlocks[height].size())];
+Block &Blockchain::smallestHead(BlockHeight height) const {
+    auto &smallestBlocks = _smallestBlocks[rawHeight(height)];
+    size_t index = selectRandomIndex(smallestBlocks.size());
+    Block *block = smallestBlocks[index];
     return *block;
 }
 
 const Block &Blockchain::winningHead() const {
-    auto possibleWinners = getHeadsOfHeight(getMaxHeightPub());
-    return *largestBlock(possibleWinners);
-}
-
-void Blockchain::tick(BlockTime timePassed) {
-    timeInSecs += timePassed;
-    valueNetworkTotal += transactionFeeRate * timePassed;
+    Value largestValue(0);
+    for (size_t index : _blocksIndex[rawHeight(getMaxHeightPub())]) {
+        largestValue = std::max(largestValue, _blocks[index]->valueInChain);
+    }
+    
+    std::vector<Block *> possiblities;
+    for (size_t index : _blocksIndex[rawHeight(getMaxHeightPub())]) {
+        if (_blocks[index]->valueInChain == largestValue) {
+            possiblities.push_back(_blocks[index].get());
+        }
+    }
+    std::uniform_int_distribution<std::size_t> vectorDis(0, possiblities.size() - 1);
+    return *possiblities[selectRandomIndex(possiblities.size())];
 }
 
 void Blockchain::advanceToTime(BlockTime time) {
     assert(time >= timeInSecs);
-    BlockTime difference = time - timeInSecs;
-    tick(difference);
+    valueNetworkTotal += transactionFeeRate * (time - timeInSecs);
+    timeInSecs = time;
 }
 
 BlockValue Blockchain::expectedBlockSize() const {
-    return transactionFeeRate * secondsPerBlock;
+    return transactionFeeRate * secondsPerBlock + BlockValue(_smallestBlocks[rawHeight(getMaxHeightPub())].front()->nextBlockReward());
 }
 
 TimeRate Blockchain::chanceToWin(HashRate hashRate) const {
     return hashRate / secondsPerBlock;
 }
 
-Value Blockchain::gap(BlockHeight i) const {
-    return rem(smallestHead(i + BlockHeight(1))) - rem(smallestHead(i));
+Block *Blockchain::blockByMinerAtHeight(BlockHeight height, const Miner &miner) const {
+    for (size_t index : _blocksIndex[rawHeight(height)]) {
+        if (_blocks[index]->minedBy(&miner)) {
+            return _blocks[index].get();
+        }
+    }
+    return nullptr;
+}
+
+Block &Blockchain::most(BlockHeight height, const Miner &miner) const {
+    Block *block = blockByMinerAtHeight(height, miner);
+    if (block) {
+        return *block;
+    }
+    
+    return smallestHead(height);
+}
+
+Block &Blockchain::oldest(BlockHeight height, const Miner &miner) const {
+    Block *block = blockByMinerAtHeight(height, miner);
+    if (block) {
+        return *block;
+    }
+    
+    return oldestPublishedHead(height);
+}
+
+Value Blockchain::gap(BlockHeight height) const {
+    return rem(smallestHead(height - BlockHeight(1))) - rem(smallestHead(height));
 }
 
 Value Blockchain::rem(const Block &block) const {
     return valueNetworkTotal - block.txFeesInChain;
 }
+

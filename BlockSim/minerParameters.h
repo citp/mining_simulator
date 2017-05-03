@@ -13,8 +13,6 @@
 
 #include <string>
 
-class Strategy;
-
 struct MinerParameters {
     const unsigned int number;
     const std::string name;

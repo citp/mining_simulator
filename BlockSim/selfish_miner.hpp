@@ -11,24 +11,23 @@
 
 #include "publishing_strategy.hpp"
 
-class Miner;
+#include <memory>
+
 class Block;
+class Strategy;
 
 class SelfishPublishingStyle : public PublishingStrategy {
 private:
-    BlockTime nextPublishingTime() const override;
-    void addNewBlock(std::unique_ptr<MinedBlock> block) override;
-    std::vector<std::unique_ptr<MinedBlock>> publishBlocks(const Blockchain &blockchain, const Miner &me) override;
-protected:
-    std::vector<std::unique_ptr<MinedBlock>> selfishChain;
-    virtual BlockHeight heightToPublish(const Blockchain &blockchain, const Miner &me) const;
-public:
-    SelfishPublishingStyle();
+    std::vector<std::unique_ptr<Block>> publishBlocks(const Blockchain &blockchain, const Miner &me, std::vector<std::unique_ptr<Block>> &unpublishedBlocks) override;
+    bool withholdsBlocks() const override { return true; }
     
+    BlockHeight getPrivateHeadHeight(std::vector<std::unique_ptr<Block>> &unpublishedBlocks) const;
+    
+protected:
+    virtual BlockHeight heightToPublish(const Blockchain &blockchain, const Miner &me, std::vector<std::unique_ptr<Block>> &unpublishedBlocks) const;
 };
 
-Strategy createSelfishStrategy(bool noiseInTransactions);
-
+std::unique_ptr<Strategy> createSelfishStrategy(bool noiseInTransactions);
 Block &selfishBlockToMineOn(const Miner &me, const Blockchain &blockchain);
 
 #endif /* selfish_miner_hpp */

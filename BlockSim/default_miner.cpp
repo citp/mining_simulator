@@ -9,22 +9,18 @@
 #include "default_miner.hpp"
 #include "block.hpp"
 #include "blockchain.hpp"
-#include "logging.h"
 #include "utils.hpp"
 #include "miner.hpp"
 #include "publishing_strategy.hpp"
-#include "mining_style.hpp"
 #include "strategy.hpp"
-#include "minerImp.hpp"
 
-#include <iostream>
 #include <cmath>
 #include <cassert>
 
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-Strategy createDefaultStrategy(bool atomic, bool noiseInTransactions) {
+std::unique_ptr<Strategy> createDefaultStrategy(bool atomic, bool noiseInTransactions) {
     ParentSelectorFunc mineFunc;
     
     if (atomic) {
@@ -35,19 +31,15 @@ Strategy createDefaultStrategy(bool atomic, bool noiseInTransactions) {
     
     auto valueFunc = std::bind(defaultValueInMinedChild, _1, _2, noiseInTransactions);
     
-    auto impCreator = [=]() {
-        return std::make_unique<MinerImp>(mineFunc, valueFunc);
-    };
-    
-    return {"default-honest", impCreator};
+    return std::make_unique<Strategy>("default-honest", mineFunc, valueFunc);
 }
 
 Block &defaultBlockToMineOnAtomic(const Miner &me, const Blockchain &chain) {
-    return chain.oldest(BlockHeight(0), me);
+    return chain.oldest(chain.getMaxHeightPub(), me);
 }
 
 Block &defaultBlockToMineOnNonAtomic(const Miner &, const Blockchain &chain) {
-    return chain.oldestPublishedHead(BlockHeight(0));
+    return chain.oldestPublishedHead(chain.getMaxHeightPub());
 }
 
 Value defaultValueInMinedChild(const Blockchain &chain, const Block &mineHere, bool noiseInTransactions) {

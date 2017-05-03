@@ -9,16 +9,11 @@
 #include "petty_miner.hpp"
 #include "block.hpp"
 #include "blockchain.hpp"
-#include "logging.h"
-#include "utils.hpp"
 #include "miner.hpp"
 #include "default_miner.hpp"
 #include "publishing_strategy.hpp"
-#include "mining_style.hpp"
 #include "strategy.hpp"
-#include "minerImp.hpp"
 
-#include <iostream>
 #include <cassert>
 
 using std::placeholders::_1;
@@ -27,7 +22,7 @@ using std::placeholders::_2;
 Block &blockToMineOnAtomic(const Miner &me, const Blockchain &chain);
 Block &blockToMineOnNonAtomic(const Miner &me, const Blockchain &chain);
 
-Strategy createPettyStrategy(bool atomic, bool noiseInTransactions) {
+std::unique_ptr<Strategy> createPettyStrategy(bool atomic, bool noiseInTransactions) {
 
     ParentSelectorFunc mineFunc;
     
@@ -38,17 +33,13 @@ Strategy createPettyStrategy(bool atomic, bool noiseInTransactions) {
     }
     auto valueFunc = std::bind(defaultValueInMinedChild, _1, _2, noiseInTransactions);
     
-    auto impCreator = [=]() {
-        return std::make_unique<MinerImp>(mineFunc, valueFunc);
-    };
-    
-    return {"petty-honest", impCreator};
+    return std::make_unique<Strategy>("petty-honest", mineFunc, valueFunc);
 }
 
 Block &blockToMineOnAtomic(const Miner &me, const Blockchain &chain) {
-    return chain.most(BlockHeight(0), me);
+    return chain.most(chain.getMaxHeightPub(), me);
 }
 
 Block &blockToMineOnNonAtomic(const Miner &, const Blockchain &chain) {
-    return chain.smallestHead(BlockHeight(0));
+    return chain.smallestHead(chain.getMaxHeightPub());
 }

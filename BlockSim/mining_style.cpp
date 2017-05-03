@@ -15,38 +15,18 @@
 #include <assert.h>
 
 MiningStyle::MiningStyle(ParentSelectorFunc parentSelectorFunc_, BlockValueFunc blockValueFunc_) :
-parentSelectorFunc(parentSelectorFunc_), blockValueFunc(blockValueFunc_), _miningTimeReached(BlockTime(0)) {}
+parentSelectorFunc(parentSelectorFunc_), blockValueFunc(blockValueFunc_) {}
 
 MiningStyle::~MiningStyle() = default;
 
-void MiningStyle::initialize(const Blockchain &, const Miner &) {
-    _miningTimeReached = BlockTime(0);
-}
-
-
-std::unique_ptr<MinedBlock> MiningStyle::attemptToMine(const Blockchain &blockchain, Miner *miner) {
-    assert(blockchain.getTime() <= nextMiningTime());
-    assert(_miningTimeReached <= blockchain.getTime());
-    
-    _miningTimeReached = blockchain.getTime();
-    
-    auto block = attemptToMineImp(blockchain, *miner);
-    
-    _miningTimeReached = blockchain.getTime() + BlockTime(1);
-    
-    assert(nextMiningTime() > blockchain.getTime());
-    
-    return block;
-}
-
-
-std::unique_ptr<MinedBlock> MiningStyle::createBlock(const Blockchain &blockchain, const Miner &miner) {
+std::unique_ptr<Block> MiningStyle::createBlock(Blockchain &blockchain, const Miner &miner) {
     auto &parent = parentSelectorFunc(miner, blockchain);
     auto value = blockValueFunc(blockchain, parent);
     
-    auto newBlock = std::make_unique<MinedBlock>(parent, miner, blockchain.getTime(), value);
+    assert(value >= parent.nextBlockReward());
+    assert(value <= parent.nextBlockReward() + blockchain.rem(parent));
     
-    assert(newBlock->height <= blockchain.getMaxHeightPub() + BlockHeight(20));
+    auto newBlock = blockchain.createBlock(&parent, &miner, value);
     
     return newBlock;
 }

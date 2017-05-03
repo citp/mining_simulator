@@ -10,11 +10,8 @@
 #define miner_hpp
 
 #include "minerParameters.h"
-#include "strategy.hpp"
 
-#include <fstream>
 #include <queue>
-#include <functional>
 #include <experimental/optional>
 
 using std::experimental::optional;
@@ -22,44 +19,53 @@ using std::experimental::make_optional;
 using std::experimental::nullopt;
 
 class Block;
-class MinedBlock;
 class Blockchain;
-class MiningStyle;
-class PublishingStrategy;
-class Miner;
-class MinerImp;
+class Strategy;
 
 class Miner {
 
 private:
     BlockCount blocksMinedTotal;
-    std::deque<std::unique_ptr<MinedBlock>> waitingToPublishQueue;
-    std::unique_ptr<MinerImp> implementation;
+    std::vector<std::unique_ptr<Block>> unbroadcastBlocks;
+    std::reference_wrapper<const Strategy> strategy;
+    
+    Value totalMiningCost;
+    BlockTime _lastCostUpdate;
+    BlockTime _nextMiningTime;
+    BlockTime _nextPublishTime;
+    bool waitingForBroadcast;
     
     bool findsBlock(const Blockchain &blockchain);
+    void updateNextPublishTime(BlockTime newTime, const Blockchain &chain);
+    
 protected:
-    void changeImplementation(std::unique_ptr<MinerImp> implementation);
     virtual void print(std::ostream& where) const;
 public:
     const MinerParameters params;
     
-    Miner(MinerParameters parameters, std::unique_ptr<MinerImp> implementation);
+    Miner(MinerParameters parameters, const Strategy &strategy);
     virtual ~Miner();
     
-    void initialize(const Blockchain &blockchain);
+    void changeStrategy(const Strategy &strategy, const Blockchain &blockchain);
     
-    BlockCount getBlocksMinedTotal() const { return blocksMinedTotal; }
+    Block *newestUnpublishedBlock() const;
     
-    BlockTime nextMiningTime() const;
-    BlockTime nextPublishingTime() const;
+    void finalize(Blockchain &blockchain);
+    void reset(const Blockchain &blockchain);
+    bool wantsToBroadcast() const { return waitingForBroadcast; }
     
-    void publishPhase(Blockchain &blockchain);
-    void miningPhase(const Blockchain &blockchain);
+    inline BlockCount getBlocksMinedTotal() const { return blocksMinedTotal; }
+    BlockTime nextMiningTime() const {  return _nextMiningTime; }
     
-     friend std::ostream& operator<<(std::ostream& os, const Miner& miner);
+    bool publishesNextRound() const;
+    
+    std::unique_ptr<Block> miningPhase(Blockchain &blockchain);
+    std::vector<std::unique_ptr<Block>> broadcastPhase(const Blockchain &chain);
+    
+    friend std::ostream& operator<<(std::ostream& os, const Miner& miner);
 };
 
-bool ownBlock(const Miner &miner, const Block &block);
+bool ownBlock(const Miner *miner, const Block *block);
 
 
 #endif /* miner_hpp */

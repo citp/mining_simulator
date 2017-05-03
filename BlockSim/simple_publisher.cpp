@@ -12,25 +12,10 @@
 
 #include <assert.h>
 
-SimplePublisher::SimplePublisher() : PublishingStrategy(),
-    _nextPublish(std::numeric_limits<BlockTime>::max()) {}
+SimplePublisher::SimplePublisher() : PublishingStrategy() {}
 
-std::vector<std::unique_ptr<MinedBlock>> SimplePublisher::publishBlocks(const Blockchain &, const Miner &) {
-    assert(unpublishedBlock);
-    _nextPublish = std::numeric_limits<BlockTime>::max();
-    std::vector<std::unique_ptr<MinedBlock>> blocks;
-    blocks.push_back(std::move(unpublishedBlock));
+std::vector<std::unique_ptr<Block>> SimplePublisher::publishBlocks(const Blockchain &, const Miner &, std::vector<std::unique_ptr<Block>> &unpublishedBlocks) {
+    std::vector<std::unique_ptr<Block>> blocks = std::move(unpublishedBlocks);
+    unpublishedBlocks.clear();
     return blocks;
-}
-
-void SimplePublisher::addNewBlock(std::unique_ptr<MinedBlock> block) {
-    assert(!unpublishedBlock);
-    unpublishedBlock = std::move(block);
-    _nextPublish = unpublishedBlock->timeMined;
-}
-
-void SimplePublisher::initialize(const Blockchain &blockchain, const Miner &miner) {
-    PublishingStrategy::initialize(blockchain, miner);
-    _nextPublish = BlockTime(0);
-    unpublishedBlock = nullptr;
 }

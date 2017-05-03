@@ -8,38 +8,45 @@
 
 #include "block.hpp"
 #include "miner.hpp"
-#include "utils.hpp"
 
 #include <cassert>
-#include <cmath>
-#include <sstream>
-#include <limits>
+#include <iostream>
 
-Block::~Block() = default;
+constexpr auto timeMax = std::numeric_limits<TimeType>::max();
 
-GenesisBlock::GenesisBlock(BlockValue blockReward) : Block(BlockTime(0), Value(0), BlockHeight(0), Value(0), Value(0), Value(rawValue(blockReward))) {}
+Block::Block(BlockValue blockReward_) : Block(nullptr, nullptr, BlockTime(0), Value(0), BlockHeight(0), Value(0), Value(0), Value(rawValue(blockReward_))) {}
 
-Block::Block(BlockTime timeSeconds_, Value txFees, BlockHeight height_, Value txFeesInChain_, Value valueInChain_, Value blockReward_) : height(height_), timeMined(timeSeconds_), value(txFees + blockReward_), txFeesInChain(txFeesInChain_), valueInChain(valueInChain_), blockReward(blockReward_) {}
+Block::Block(const Block *parent_, const Miner *miner_, BlockTime timeSeconds_, Value txFees, BlockHeight height_, Value txFeesInChain_, Value valueInChain_, Value blockReward_) : timeBroadcast(timeMax), parent(parent_), miner(miner_), height(height_), timeMined(timeSeconds_), value(txFees + blockReward_), txFeesInChain(txFeesInChain_), valueInChain(valueInChain_), blockReward(blockReward_) {}
 
-MinedBlock::MinedBlock(Block &parent_, const Miner &miner_, BlockTime timeSeconds_, Value txFees) :
-    Block(timeSeconds_, txFees, parent_.height + BlockHeight(1), parent_.txFeesInChain + txFees, parent_.valueInChain + parent_.blockReward + txFees, parent_.nextBlockReward()),
-    parent(parent_), miner(miner_) {}
+Block::Block(const Block *parent_, const Miner *miner_, BlockTime timeSeconds_, Value txFees) :
+    Block(parent_, miner_, timeSeconds_, txFees, parent_->height + BlockHeight(1), parent_->txFeesInChain + txFees, parent_->valueInChain + parent_->blockReward + txFees, parent_->nextBlockReward()) {}
 
-void Block::addChild(std::unique_ptr<Block> block) {
-    assert(block.get() != NULL);
-    children.push_back(std::move(block));
+void Block::reset(const Block *parent_, const Miner *miner_, BlockTime timeSeconds_, Value txFees) {
+    height = parent_->height + BlockHeight(1);
+    timeMined = timeSeconds_;
+    timeBroadcast = timeMax;
+    value = txFees + parent_->nextBlockReward();
+    txFeesInChain = txFees + parent_->txFeesInChain;
+    valueInChain = txFees + parent_->valueInChain + parent_->nextBlockReward();
+    blockReward = parent_->nextBlockReward();
+    parent = parent_;
+    miner = miner_;
 }
 
 Value Block::nextBlockReward() const {
     return blockReward;
 }
 
-void Block::publish(BlockTime timePub) {
-    timePublished = timePub;
+void Block::broadcast(BlockTime timePub) {
+    timeBroadcast = timePub;
 }
 
-BlockTime Block::getTimePublished() const {
-    return timePublished;
+bool Block::isBroadcast() const {
+    return timeBroadcast < timeMax;
+}
+
+BlockTime Block::getTimeBroadcast() const {
+    return timeBroadcast;
 }
 
 std::ostream& operator<< (std::ostream& out, const Block& mc) {
@@ -47,39 +54,20 @@ std::ostream& operator<< (std::ostream& out, const Block& mc) {
     return out;
 }
 
-std::vector<std::reference_wrapper<const Block>> Block::getChain() const {
-    std::vector<std::reference_wrapper<const Block>> chain;
+std::vector<const Block *> Block::getChain() const {
+    std::vector<const Block *> chain;
     const Block *current = this;
     while (current) {
-        chain.push_back(*current);
-        auto minedCurrent = dynamic_cast<const MinedBlock *>(current);
-        if (minedCurrent) {
-            current = &minedCurrent->parent;
-        } else {
-            break;
-        }
-    }
+        chain.push_back(current);
+        current = current->parent;    }
     return chain;
 }
 
-Block &Block::getAncestorOfHeight(BlockHeight blockHeight) {
-    assert(blockHeight >= BlockHeight(0));
-    Block *current = this;
-    while (current->height > blockHeight) {
-        auto minedCurrent = dynamic_cast<MinedBlock *>(current);
-        assert(minedCurrent);
-        current = &minedCurrent->parent;
+void Block::print(std::ostream& os, bool isPublished) const {
+    if (height == BlockHeight(0)) {
+        os << "[h:0, m:gen]";
+        return;
     }
-    assert(current);
-    assert(current->height == blockHeight);
-    return *current;
-}
-
-void GenesisBlock::print(std::ostream& os, bool) const {
-    os << "[h:0, m:gen]";
-}
-
-void MinedBlock::print(std::ostream& os, bool isPublished) const {
     if (isPublished) {
         os << "{";
     }
@@ -87,7 +75,7 @@ void MinedBlock::print(std::ostream& os, bool isPublished) const {
         os << "[";
     }
     
-    os << "h:" << height << ", m:" << miner.params.name << ", v:" << value << ", t:" << timeMined;
+    os << "h:" << height << ", m:" << miner->params.name << ", v:" << value << ", t:" << timeMined;
     
     if (isPublished) {
         os << "}->";
@@ -97,14 +85,6 @@ void MinedBlock::print(std::ostream& os, bool isPublished) const {
     }
 }
 
-bool MinedBlock::minedBy(const Miner &miner_) const {
-    return &miner == &miner_;
-}
-
-bool GenesisBlock::minedBy(const Miner &) const {
-    return false;
-}
-
-bool Block::isHead() const {
-    return children.size() == 0;
+bool Block::minedBy(const Miner *miner_) const {
+    return miner == miner_;
 }

@@ -9,34 +9,29 @@
 #ifndef strategy_hpp
 #define strategy_hpp
 
-#include "typeDefs.hpp"
+#include "mining_style.hpp"
+#include "picky_mining_style.hpp"
+#include "publishing_strategy.hpp"
 
 #include <functional>
 #include <memory>
 #include <string>
 
-class Block;
-class MinedBlock;
-class Blockchain;
 class MiningStyle;
-class PublishingStrategy;
-class Miner;
-class MinerImp;
-
-typedef std::function<std::unique_ptr<MinerImp>()> MinerImpCreator;
-
 
 class Strategy {
-private:
-    const MinerImpCreator minerImpCreator;
-
 public:
+    
+    Strategy(std::string name, ParentSelectorFunc parentSelectorFunc, BlockValueFunc blockValueFunc);
+    Strategy(std::string name, ParentSelectorFunc parentSelectorFunc, BlockValueFunc blockValueFunc, ShouldMineFunc shouldMineFunc);
+    Strategy(std::string name, ParentSelectorFunc parentSelectorFunc_, BlockValueFunc blockValueFunc_, ShouldMineFunc shouldMineFunc_, std::unique_ptr<PublishingStrategy> publisher_);
+    Strategy(std::string name, ParentSelectorFunc parentSelectorFunc, BlockValueFunc blockValueFunc, std::unique_ptr<PublishingStrategy> publisher);
+    Strategy(std::string name, std::unique_ptr<MiningStyle> miningStyle, std::unique_ptr<PublishingStrategy> publisher);
+    
     const std::string name;
+    const std::unique_ptr<MiningStyle> miningStyle;
+    const std::unique_ptr<PublishingStrategy> publisher;
     
-    Strategy(std::string name, MinerImpCreator minerImpCreator);
-    friend std::ostream& operator<<(std::ostream& os, const Strategy& strat);
-    
-    std::unique_ptr<MinerImp> createImp() const;
 };
 
 #endif /* strategy_hpp */

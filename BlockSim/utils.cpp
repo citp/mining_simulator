@@ -7,9 +7,7 @@
 //
 
 #include "utils.hpp"
-#include "block.hpp"
 
-#include <cassert>
 #include <random>
 
 inline std::mt19937& getGen() {
@@ -18,8 +16,11 @@ inline std::mt19937& getGen() {
     return gen;
 }
 
-std::size_t selectRandomIndex(std::size_t size) {
-    std::uniform_int_distribution<std::size_t> vectorDis(0, size - 1);
+std::size_t selectRandomIndex(size_t size) {
+    if (size == 1) {
+        return 0;
+    }
+    std::uniform_int_distribution<size_t> vectorDis(0, size - 1);
     return vectorDis(getGen());
 }
 
@@ -28,49 +29,15 @@ double selectRandomChance() {
     return dis(getGen());
 }
 
-std::size_t selectWeightedIndex(const std::vector<double> &weights) {
-    std::discrete_distribution<std::size_t> dis(begin(weights), end(weights));
-    size_t index = dis(getGen());
-    return index;
-}
-
 BlockTime selectMiningOffset(TimeRate mean) {
     std::geometric_distribution<unsigned long> dis(rawRate(mean));
     return BlockTime(dis(getGen()));
-}
-
-Block *largestBlock(const std::vector<Block *> &blocks) {
-    if (blocks.size() == 0) {
-        return nullptr;
-    }
-    
-    Value largestValue((*blocks.begin())->valueInChain);
-    for (const auto &block : blocks) {
-        if (largestValue < block->valueInChain) {
-            largestValue = block->valueInChain;
-        }
-    }
-    
-    std::vector<Block *> possiblities;
-    for (const auto &block : blocks) {
-        //add blocks matching highest/least value criteria to a queue for random selection
-        if (valueEquals(block->valueInChain, largestValue)) {
-            possiblities.push_back(block);
-        }
-    }
-    std::uniform_int_distribution<std::size_t> vectorDis(0, possiblities.size() - 1);
-    return possiblities[selectRandomIndex(possiblities.size())];
 }
 
 Value valWithNoise(Value minVal, Value maxVal) {
     static std::random_device *rd = new std::random_device();
     static std::mt19937 gen((*rd)());
     
-    std::uniform_int_distribution<double> dis(((rawValue(maxVal) - rawValue(minVal)) * 3) / 4 + rawValue(minVal), rawValue(maxVal));
+    std::uniform_int_distribution<ValueType> dis(((rawValue(maxVal) - rawValue(minVal)) * 3) / 4 + rawValue(minVal), rawValue(maxVal));
     return Value(dis(gen));   //random between 75% maxVal and minVal
-}
-
-bool valueEquals(Value a, Value b, double epsilon)
-{
-    return std::abs(rawValue(a - b)) < epsilon;
 }

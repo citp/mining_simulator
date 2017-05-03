@@ -18,7 +18,7 @@ class Block;
 class Blockchain;
 class Strategy;
 
-Strategy createDefaultStrategy(bool atomic, bool noiseInTransactions);
+std::unique_ptr<Strategy> createDefaultStrategy(bool atomic, bool noiseInTransactions);
 
 Value defaultValueInMinedChild(const Blockchain &blockchain, const Block &mineHere, bool noiseInTransactions);
 

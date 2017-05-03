@@ -9,14 +9,14 @@
 #ifndef typeDefs_hpp
 #define typeDefs_hpp
 
-typedef double ValueType;
+typedef unsigned long long ValueType;
 typedef unsigned long TimeType;
 typedef unsigned int HeightType;
 typedef unsigned int CountType;
 typedef double RateType;
 typedef double WeightType;
 
-#define DEBUG_TYPES
+//#define DEBUG_TYPES
 
 #ifdef DEBUG_TYPES
 
@@ -111,13 +111,15 @@ RateType rawRate(HashRate rate);
 
 WeightType rawWeight(StratWeight weight);
 
+double valuePercentage(Value a, Value b);
+
 //#define NDEBUG
 
-#define SATOSHI_PER_BITCOIN 100000000
+#define SATOSHI_PER_BITCOIN ValueType(100000000)
 //#define TOTAL_BLOCK_VALUE 50 * SATOSHI_PER_BITCOIN
-//#define UNDERCUT_VALUE Value(100000)
+#define UNDERCUT_VALUE Value(100000)
 
-#define UNDERCUT_VALUE Value(.001)
+//#define UNDERCUT_VALUE Value(.001)
 
 
 #define COST_PER_SEC_TO_MINE ValueRate(0)//(((A*SEC_PER_BLOCK+B)/SEC_PER_BLOCK)*(1.0/NUM_MINERS))*(1.0/2.0)

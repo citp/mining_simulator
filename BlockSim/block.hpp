@@ -17,57 +17,37 @@
 class Miner;
 
 class Block {
-    std::vector< std::unique_ptr<Block>> children;
-    BlockTime timePublished;
+protected:
+    BlockTime timeBroadcast;
 public:
-    const BlockHeight height;
-    const BlockTime timeMined;
-    const Value value;
-    const Value txFeesInChain;
-    const Value valueInChain;
-    const Value blockReward;
+    const Block *parent;
+    const Miner *miner;
+    BlockHeight height;
+    BlockTime timeMined;
+    Value value;
+    Value txFeesInChain;
+    Value valueInChain;
+    Value blockReward;
     
-    Block();
-    Block(BlockTime timeSeconds, Value txFees, BlockHeight height, Value txFeesInChain, Value valueInChain, Value blockReward);
+    Block(const Block *parent_, const Miner *miner_, BlockTime timeSeconds, Value txFees, BlockHeight height, Value txFeesInChain, Value valueInChain, Value blockReward);
     
-    Block (const Block &block) = delete;
-    virtual ~Block();
+    Block(BlockValue blockReward);
+    Block(const Block *parent_, const Miner *miner_, BlockTime timeSeconds_, Value txFees);
     
-    void publish(BlockTime timePub);
-    BlockTime getTimePublished() const;
+    void reset(const Block *parent, const Miner *miner, BlockTime timeSeconds, Value txFees);
     
-    std::vector<std::reference_wrapper<const Block>> getChain() const;
-    
-    Block &getAncestorOfHeight(BlockHeight height);
-    
-    void addChild(std::unique_ptr<Block> block);
+    void broadcast(BlockTime timePub);
+    BlockTime getTimeBroadcast() const;
+    bool isBroadcast() const;
     
     Value nextBlockReward() const;
     
-    virtual bool minedBy(const Miner &miner) const = 0;
-    virtual void print(std::ostream& where, bool isPublished) const = 0;
-    bool isHead() const;
+    bool minedBy(const Miner *miner) const;
+    void print(std::ostream& where, bool isPublished) const;
+    std::vector<const Block *> getChain() const;
+    
 };
 
 std::ostream& operator<< (std::ostream& out, const Block& mc);
-
-class MinedBlock : public Block {
-private:
-    bool minedBy(const Miner &miner) const override;
-    
-    void print(std::ostream& where, bool isPublished) const override;
-public:
-    Block &parent;
-    const Miner &miner;
-    MinedBlock(Block &parent, const Miner &miner, BlockTime timeSeconds, Value txFees);
-};
-
-class GenesisBlock : public Block {
-    bool minedBy(const Miner &miner) const override;
-    
-    void print(std::ostream& where, bool isPublished) const override;
-public:
-    GenesisBlock(BlockValue blockReward);
-};
 
 #endif /* block_hpp */

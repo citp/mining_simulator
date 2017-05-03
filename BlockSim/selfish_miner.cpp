@@ -12,83 +12,57 @@
 #include "logging.h"
 #include "miner.hpp"
 #include "default_miner.hpp"
-#include "mining_style.hpp"
 #include "strategy.hpp"
-#include "minerImp.hpp"
 
 #include <cmath>
-#include <iostream>
 #include <assert.h>
 
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-Strategy createSelfishStrategy(bool noiseInTransactions) {
+std::unique_ptr<Strategy> createSelfishStrategy(bool noiseInTransactions) {
     auto valueFunc = std::bind(defaultValueInMinedChild, _1, _2, noiseInTransactions);
     
-    auto impCreator = [=]() {
-        return std::make_unique<MinerImp>(selfishBlockToMineOn, valueFunc, std::make_unique<SelfishPublishingStyle>());
-    };
-    
-    return {"selfish", impCreator};
+    return std::make_unique<Strategy>("selfish", selfishBlockToMineOn, valueFunc, std::make_unique<SelfishPublishingStyle>());
 }
 
 Block &selfishBlockToMineOn(const Miner &me, const Blockchain &chain) {
-    return chain.oldest(BlockHeight(0), me);}
-
-SelfishPublishingStyle::SelfishPublishingStyle() : PublishingStrategy() {}
-
-BlockTime SelfishPublishingStyle::nextPublishingTime() const {
-    if (selfishChain.size() > 0) {
-        return getTimeReached() + BlockTime(1);
+    Block *newest = me.newestUnpublishedBlock();
+    if (newest && newest->height >= chain.getMaxHeightPub()) {
+        return *newest;
     } else {
-        return BlockTime(std::numeric_limits<unsigned long>::max());
+        return chain.oldest(chain.getMaxHeightPub(), me);
     }
 }
 
-void SelfishPublishingStyle::addNewBlock(std::unique_ptr<MinedBlock> block) {
-    selfishChain.push_back(std::move(block));
-}
+std::vector<std::unique_ptr<Block>> SelfishPublishingStyle::publishBlocks(const Blockchain &chain, const Miner &me, std::vector<std::unique_ptr<Block>> &unpublishedBlocks) {
+    assert(!unpublishedBlocks.empty());
+    BlockHeight height = heightToPublish(chain, me, unpublishedBlocks);
+    
+    std::vector<BlockHeight> heights;
+    heights.resize(unpublishedBlocks.size());
+    std::transform(begin(unpublishedBlocks), end(unpublishedBlocks), heights.begin(), [&](auto &block) { return block->height; });
+    auto splitPoint = std::upper_bound(std::begin(heights), std::end(heights), height, [](auto first, auto second) { return first < second; });
+    auto offset = std::distance(std::begin(heights), splitPoint);
+    std::vector<std::unique_ptr<Block>> split_lo(std::make_move_iterator(std::begin(unpublishedBlocks)), std::make_move_iterator(std::begin(unpublishedBlocks) + offset));
 
-std::vector<std::unique_ptr<MinedBlock>> SelfishPublishingStyle::publishBlocks(const Blockchain &blockchain, const Miner &me) {
-    assert(!selfishChain.empty());
-    BlockHeight height = heightToPublish(blockchain, me);
+    unpublishedBlocks.erase(begin(unpublishedBlocks), std::begin(unpublishedBlocks) + offset);
     
-    assert(height > BlockHeight(0));
-    
-    auto splitPoint = std::find_if(begin(selfishChain), end(selfishChain), [&](auto &p) { return p->height == height;});
-    
-    std::vector<std::unique_ptr<MinedBlock>> split_lo(std::make_move_iterator(begin(selfishChain)), std::make_move_iterator(splitPoint));
-    std::vector<std::unique_ptr<MinedBlock>> split_hi(std::make_move_iterator(splitPoint), std::make_move_iterator(end(selfishChain)));
-    selfishChain = std::move(split_hi);
     return split_lo;
 }
 
-BlockHeight SelfishPublishingStyle::heightToPublish(const Blockchain &blockchain, const Miner &me) const {
-    assert(!selfishChain.empty());
-    BlockHeight heightToPublish(0);
-    if(selfishChain.back()->height == blockchain.getMaxHeightPub()) {
-        //this represents when a selfish miner had a lead, but the network (honest miners, whathave you) found a block, bringing the public height of the block chain up to the height of the selfish miner's private chain. Want to publish immediately for a (gamma) chance to win (or the miner actually tied with another miner-- but they'd still want to publish immediately)
-        COMMENTARY("Miner " << me.params.name << " publishes selfish chain for a race condition." << std::endl);
-        heightToPublish = selfishChain.back()->height;
-    } else if(selfishChain.back()->height == blockchain.getMaxHeightPub() + BlockHeight(1) && ownBlock(me, selfishChain.back()->parent)) {
-        if(selfishChain.size() == 1) {
-            //in this situation, you've gotta differentiate between when you found your first hidden block and if you are posting a block to win a race condition. You should publish if you're coming out of a race condition...
-            //the way to know is if there is another public head at the same height as the head->parent().
-            const auto &possibleHeads = blockchain.getHeadsOfHeight(blockchain.getMaxHeightPub());
-            if (possibleHeads.size() > 1) {
-                COMMENTARY("Miner " << me.params.name << " publishes selfish chain to protect past block.\n");
-                heightToPublish = selfishChain.back()->height;
-            }
-        } else {
-            //this is the case where the selfish miner mined at least 2 blocks, and is only 1 ahead of the public chain-- they should publish because they want to protect their past blocks
-            COMMENTARY("Miner " << me.params.name << " publishes selfish chain to protect blocks.\n");
-            heightToPublish = selfishChain.back()->height;
-        }
-    } else {
-        // If we have more blocks in reserve just keep 2 blocks hidden
-        heightToPublish = blockchain.getMaxHeightPub();
-        COMMENTARY("Miner " << me.params.name << " publishes up to " << heightToPublish << " because other miners found block(s). " << selfishChain.back()->height - heightToPublish << " blocks remaining in chain." << std::endl);
+BlockHeight SelfishPublishingStyle::getPrivateHeadHeight(std::vector<std::unique_ptr<Block>> &unpublishedBlocks) const {
+    return unpublishedBlocks.back()->height;
+}
+
+BlockHeight SelfishPublishingStyle::heightToPublish(const Blockchain &chain, const Miner &me, std::vector<std::unique_ptr<Block>> &unpublishedBlocks) const {
+    assert(!unpublishedBlocks.empty());
+    auto privateHeight = getPrivateHeadHeight(unpublishedBlocks);
+    auto publicHeight = chain.getMaxHeightPub();
+    BlockHeight heightToPublish(publicHeight);
+    // If private chain is one block ahead of the public chain and there is a race for the public head then publish
+    if (privateHeight == publicHeight + BlockHeight(1) && chain.blocksOfHeight(publicHeight) > BlockCount(1)) {
+        heightToPublish = privateHeight;
     }
     return heightToPublish;
 }

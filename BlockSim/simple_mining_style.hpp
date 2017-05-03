@@ -14,20 +14,12 @@
 class SimpleMiningStyle : public MiningStyle {
     
 private:
-    bool _hasInitializedTime;
-    BlockTime _nextBlockTime;
-    
-    BlockTime generateNewMiningTime(const Blockchain &blockchain, const Miner &miner);
-    
-    void initialize(const Blockchain &blockchain, const Miner &miner) override;
-    std::unique_ptr<MinedBlock> attemptToMineImp(const Blockchain &blockchain, Miner &me) override;
-    BlockTime nextMiningTime() const override;
-    Value moneySpentMining(const Miner &miner) const override;
-    
+    std::pair<std::unique_ptr<Block>, Value> attemptToMine(Blockchain &blockchain, Miner *miner, BlockTime lastTimePaid) override;
+    BlockTime nextMiningTime(const Blockchain &chain, const Miner &miner) const override;
+    Value resetMiningCost(const Miner &miner, const Blockchain &chain, BlockTime lastTimePaid) override;
     
 public:
-    SimpleMiningStyle(ParentSelectorFunc parentSelectorFunc_, BlockValueFunc blockValueFunc_) : MiningStyle(parentSelectorFunc_, blockValueFunc_), _hasInitializedTime(false) {}
-    virtual ~SimpleMiningStyle() = default;
+    SimpleMiningStyle(ParentSelectorFunc parentSelectorFunc, BlockValueFunc blockValueFunc);
 };
 
 #endif /* simple_miner_hpp */

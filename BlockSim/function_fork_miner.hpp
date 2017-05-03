@@ -11,15 +11,18 @@
 
 #include "typeDefs.hpp"
 
-#include <memory>
 #include <functional>
+#include <memory>
 
 class Strategy;
 class Blockchain;
+class Block;
 
 using ForkFunc = std::function<Value(const Blockchain &, Value)>;
 
-Strategy createFunctionForkStrategy(bool atomic, ForkFunc f, std::string type);
+std::unique_ptr<Strategy> createFunctionForkStrategy(bool atomic, ForkFunc f, std::string type);
+
+Value functionForkValueInMinedChild(const Blockchain &blockchain, const Block &block, ForkFunc f);
 
 Value functionForkPercentage(const Blockchain &blockchain, Value maxVal, double funcCoeff);
 Value functionForkLambert(const Blockchain &blockchain, Value maxVal, double lambertCoeff);
