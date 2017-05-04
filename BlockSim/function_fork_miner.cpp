@@ -43,11 +43,11 @@ std::unique_ptr<Strategy> createFunctionForkStrategy(bool atomic, ForkFunc f, st
 }
 
 Block &blockToMineOnNonAtomic(const Miner &, const Blockchain &chain, ForkFunc f) {
-    Block &contBlock = chain.smallestHead(chain.getMaxHeightPub());
+    Block &contBlock = chain.most(chain.getMaxHeightPub());
     if (chain.getMaxHeightPub() == BlockHeight(0)) {
         return contBlock;
     }
-    Block &underBlock = chain.smallestHead(chain.getMaxHeightPub() - BlockHeight(1));
+    Block &underBlock = chain.most(chain.getMaxHeightPub() - BlockHeight(1));
     
     if (valCont(chain, f, contBlock) >= valUnder(chain, f, underBlock)) {
         return contBlock;

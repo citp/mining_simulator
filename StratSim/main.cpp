@@ -133,7 +133,7 @@ void runStratGame(RunSettings settings, std::vector<std::unique_ptr<LearningStra
     
     GAMEINFOBLOCK(
                   GAMEINFO("Games over. Final strategy weights:\n");
-                  stratPool.printWeights();
+                  learningModel->printWeights();
                   )
 }
 

@@ -52,9 +52,8 @@ GameResult runGame(MinerGroup &minerGroup, Blockchain &blockchain, GameSettings 
         
         COMMENTARY("Round " << blockchain.getTime() << " over. Current blockchain:" << std::endl);
         COMMENTARYBLOCK (
-            blockchain->printBlockchain();
-            blockchain->printHeads();
-            blockchain->printOldHeads();
+            blockchain.printBlockchain();
+            blockchain.printHeads();
         )
     }
     
@@ -96,7 +95,7 @@ GameResult runGame(MinerGroup &minerGroup, Blockchain &blockchain, GameSettings 
     
     for (size_t i = 0; i < minerGroup.miners.size(); i++) {
         const auto &miner = minerGroup.miners[i];
-        GAMEINFO(*miner << " earned:" << minerResults[miner.get()].totalProfit << " mined " << miner->getBlocksMinedTotal() <<" total, of which " << minerResults[miner.get()].blocksInWinningChain << " made it into the final chain" << std::endl);
+        GAMEINFO(*miner << " earned:" << minerResults[i].totalProfit << " mined " << miner->getBlocksMinedTotal() <<" total, of which " << minerResults[i].blocksInWinningChain << " made it into the final chain" << std::endl);
         totalBlocks += miner->getBlocksMinedTotal();
         finalBlocks += minerResults[i].blocksInWinningChain;
     }

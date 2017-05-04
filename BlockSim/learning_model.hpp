@@ -46,6 +46,7 @@ public:
     void pickNewStrategies(double phi, std::vector<Miner *> &miners, const Blockchain &chain);
     void updateWeights(GameResult &gameResult, Value maxPossibleProfit, double phi);
     void writeWeights(unsigned int gameNum);
+    void printWeights();
 };
 
 #endif /* learning_model_hpp */

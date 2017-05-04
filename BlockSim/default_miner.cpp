@@ -39,7 +39,7 @@ Block &defaultBlockToMineOnAtomic(const Miner &me, const Blockchain &chain) {
 }
 
 Block &defaultBlockToMineOnNonAtomic(const Miner &, const Blockchain &chain) {
-    return chain.oldestPublishedHead(chain.getMaxHeightPub());
+    return chain.oldest(chain.getMaxHeightPub());
 }
 
 Value defaultValueInMinedChild(const Blockchain &chain, const Block &mineHere, bool noiseInTransactions) {

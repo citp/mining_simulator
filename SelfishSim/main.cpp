@@ -107,7 +107,7 @@ int main(int, const char * []) {
         
         GAMEINFO("The game is complete. Calculate the scores:" << std::endl);
 
-        GAMEINFO("Total profit:" << totalProfit << std::endl);
+        GAMEINFO("Total profit:" << result.moneyInLongestChain << std::endl);
         
         assert(minerResults[0].totalProfit <= result.moneyInLongestChain);
         

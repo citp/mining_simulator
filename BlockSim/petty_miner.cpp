@@ -41,5 +41,5 @@ Block &blockToMineOnAtomic(const Miner &me, const Blockchain &chain) {
 }
 
 Block &blockToMineOnNonAtomic(const Miner &, const Blockchain &chain) {
-    return chain.smallestHead(chain.getMaxHeightPub());
+    return chain.most(chain.getMaxHeightPub());
 }

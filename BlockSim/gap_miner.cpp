@@ -18,6 +18,7 @@
 
 #include <cmath>
 #include <cassert>
+#include <iostream>
 
 using std::placeholders::_1;
 using std::placeholders::_2;

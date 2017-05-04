@@ -52,13 +52,13 @@ Block &lazyBlockToMineOnAtomic(const Miner &me, const Blockchain &chain) {
 
 Block &lazyBlockToMineOnNonAtomic(const Miner &, const Blockchain &chain) {
     if (chain.getMaxHeightPub() == BlockHeight(0)) {
-        return chain.smallestHead(chain.getMaxHeightPub());
+        return chain.most(chain.getMaxHeightPub());
     }
     
-    if (chain.rem(chain.smallestHead(chain.getMaxHeightPub())) >= chain.gap(chain.getMaxHeightPub())) {
-        return chain.smallestHead(chain.getMaxHeightPub());
+    if (chain.rem(chain.most(chain.getMaxHeightPub())) >= chain.gap(chain.getMaxHeightPub())) {
+        return chain.most(chain.getMaxHeightPub());
     } else {
-        return chain.smallestHead(chain.getMaxHeightPub() - BlockHeight(1));
+        return chain.most(chain.getMaxHeightPub() - BlockHeight(1));
     }
 }
 

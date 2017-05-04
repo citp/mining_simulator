@@ -11,6 +11,7 @@
 #include "miner.hpp"
 #include "blockchain.hpp"
 #include "block.hpp"
+#include "logging.h"
 
 #include <cassert>
 #include <iostream>
@@ -81,6 +82,7 @@ void MinerGroup::nextMineRound(Blockchain &blockchain) {
         auto wantedBroadcast = miner->wantsToBroadcast();
         auto block = miner->miningPhase(blockchain);
         if (block) {
+            COMMENTARY("Miner " << miner->params.name << " publishes " << *block << "\n");
             broadcastQueue.push_back(std::move(block));
             std::push_heap(begin(broadcastQueue), end(broadcastQueue), broadcastSort);
         }

@@ -59,7 +59,7 @@ void Miner::finalize(Blockchain &blockchain) {
 
 std::unique_ptr<Block> Miner::miningPhase(Blockchain &chain) {
     assert(chain.getTime() == nextMiningTime());
-    COMMENTARY("\tMiner " << params.name << "'s turn. " << strat << ". ");
+    COMMENTARY("\tMiner " << params.name << "'s turn. " << strategy.get().name << ". ");
     
     auto miningPair = strategy.get().miningStyle->attemptToMine(chain, this, _lastCostUpdate);
     _lastCostUpdate = chain.getTime();
@@ -71,7 +71,7 @@ std::unique_ptr<Block> Miner::miningPhase(Blockchain &chain) {
     
     COMMENTARYBLOCK (
         if (block) {
-            COMMENTARY("\n### Miner " << params.name << " found a block: " << *block << " on top of " << block->parent << " with value " << block->value << " ###");
+            COMMENTARY("\n### Miner " << params.name << " found a block: " << *block << " on top of " << *block->parent << " with value " << block->value << " ###\n");
         }
     )
     
@@ -99,6 +99,7 @@ std::vector<std::unique_ptr<Block>> Miner::broadcastPhase(const Blockchain &chai
     waitingForBroadcast = !unbroadcastBlocks.empty();
     for (auto &block : blocksToPublish) {
         block->broadcast(chain.getTime() + params.networkDelay);
+        COMMENTARY("Miner " << params.name << " publishes " << *block << "\n");
     }
     return blocksToPublish;
 }

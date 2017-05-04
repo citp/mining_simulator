@@ -42,7 +42,7 @@ public:
 
     void publishBlock(std::unique_ptr<Block> block);
     
-    
+    const std::vector<const Block *> getHeads() const;
     void printBlockchain() const;
     void printHeads() const;
     
@@ -50,9 +50,9 @@ public:
     
     BlockCount blocksOfHeight(BlockHeight height) const;
     
-    const std::vector<Block *> oldestPublishedHeads(BlockHeight height) const;
-    Block &oldestPublishedHead(BlockHeight height) const;
-    Block &smallestHead(BlockHeight age) const;
+    const std::vector<Block *> oldestBlocks(BlockHeight height) const;
+    Block &oldest(BlockHeight height) const;
+    Block &most(BlockHeight age) const;
     
     void advanceToTime(BlockTime time);
     

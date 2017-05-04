@@ -20,7 +20,7 @@
 #include <fstream>
 #include <random>
 #include <assert.h>
-
+#include <iostream>
 #include <sys/stat.h>
 
 LearningModel::LearningModel(std::vector<std::unique_ptr<LearningStrategy>> &learningStrategies_, size_t minerCount_, std::string resultFolder) : learningStrategies(std::move(learningStrategies_)), stratCount(learningStrategies.size()), minerCount(minerCount_) {
@@ -98,5 +98,12 @@ StratWeight LearningModel::getCurrentWeight(size_t i) const {
 
 size_t LearningModel::getChosenStrat(size_t i) const {
     return chosenStrats[i];
+}
+
+void LearningModel::printWeights() {
+    for (size_t strategyIndex = 0; strategyIndex < learningStrategies.size(); strategyIndex++) {
+        std::cout << "strategy:" << learningStrategies[strategyIndex]->strat->name;
+        std::cout << " weight: " << learningStrategies[strategyIndex]->weight << "\n";
+    }
 }
 

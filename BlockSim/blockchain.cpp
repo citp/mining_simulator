@@ -89,7 +89,7 @@ BlockCount Blockchain::blocksOfHeight(BlockHeight height) const {
     return BlockCount(_blocksIndex[rawHeight(height)].size());
 }
 
-const std::vector<Block *> Blockchain::oldestPublishedHeads(BlockHeight height) const {
+const std::vector<Block *> Blockchain::oldestBlocks(BlockHeight height) const {
     BlockTime minTimePublished(std::numeric_limits<BlockTime>::max());
     for (size_t index : _blocksIndex[rawHeight(height)]) {
         minTimePublished = std::min(_blocks[index]->getTimeBroadcast(), minTimePublished);
@@ -105,12 +105,12 @@ const std::vector<Block *> Blockchain::oldestPublishedHeads(BlockHeight height) 
     return possiblities;
 }
 
-Block &Blockchain::oldestPublishedHead(BlockHeight height) const {
-    auto possiblities = oldestPublishedHeads(height);
+Block &Blockchain::oldest(BlockHeight height) const {
+    auto possiblities = oldestBlocks(height);
     return *possiblities[selectRandomIndex(possiblities.size())];
 }
 
-Block &Blockchain::smallestHead(BlockHeight height) const {
+Block &Blockchain::most(BlockHeight height) const {
     auto &smallestBlocks = _smallestBlocks[rawHeight(height)];
     size_t index = selectRandomIndex(smallestBlocks.size());
     Block *block = smallestBlocks[index];
@@ -162,7 +162,7 @@ Block &Blockchain::most(BlockHeight height, const Miner &miner) const {
         return *block;
     }
     
-    return smallestHead(height);
+    return most(height);
 }
 
 Block &Blockchain::oldest(BlockHeight height, const Miner &miner) const {
@@ -171,14 +171,54 @@ Block &Blockchain::oldest(BlockHeight height, const Miner &miner) const {
         return *block;
     }
     
-    return oldestPublishedHead(height);
+    return oldest(height);
 }
 
 Value Blockchain::gap(BlockHeight height) const {
-    return rem(smallestHead(height - BlockHeight(1))) - rem(smallestHead(height));
+    return rem(most(height - BlockHeight(1))) - rem(most(height));
 }
 
 Value Blockchain::rem(const Block &block) const {
     return valueNetworkTotal - block.txFeesInChain;
 }
+
+const std::vector<const Block *> Blockchain::getHeads() const {
+    std::unordered_set<const Block *> nonHeadBlocks;
+    std::unordered_set<const Block *> possibleHeadBlocks;
+    for (auto &block : _blocks) {
+        if (block->parent != nullptr) {
+            nonHeadBlocks.insert(block->parent);
+            possibleHeadBlocks.erase(block->parent);
+        }
+        if (nonHeadBlocks.find(block.get()) == end(nonHeadBlocks)) {
+            possibleHeadBlocks.insert(block.get());
+        }
+    }
+    return std::vector<const Block *>(std::begin(possibleHeadBlocks), std::end(possibleHeadBlocks));
+}
+
+void Blockchain::printBlockchain() const {
+    std::unordered_set<const Block *> printedBlocks;
+    for (auto &current : getHeads()) {
+        auto chain = current->getChain();
+        for (auto block : chain) {
+            if (printedBlocks.find(block) == end(printedBlocks)) {
+                std::cout << *block;
+                printedBlocks.insert(block);
+            } else {
+                break;
+            }
+        }
+        std::cout << std::endl;
+    }
+}
+
+void Blockchain::printHeads() const {
+    std::cout << "heads:" << std::endl;
+    for (auto current : getHeads()) {
+        std::cout << *current << std::endl;
+    }
+    std::cout << "end heads." << std::endl;
+}
+
 

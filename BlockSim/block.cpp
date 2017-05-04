@@ -59,7 +59,8 @@ std::vector<const Block *> Block::getChain() const {
     const Block *current = this;
     while (current) {
         chain.push_back(current);
-        current = current->parent;    }
+        current = current->parent;
+    }
     return chain;
 }
 
