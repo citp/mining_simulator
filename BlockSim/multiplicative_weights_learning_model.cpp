@@ -13,6 +13,7 @@
 
 #include <assert.h>
 #include <math.h>
+#include <algorithm>
 
 MultiplicativeWeightsLearningModel::MultiplicativeWeightsLearningModel(std::vector<std::unique_ptr<LearningStrategy>> &learningStrategies, size_t minerCount_, std::string resultFolder) : LearningModel(learningStrategies, minerCount_, resultFolder) {
     std::vector<StratWeight> weights = getCurrentWeights();

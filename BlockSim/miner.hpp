@@ -12,6 +12,7 @@
 #include "minerParameters.h"
 
 #include <queue>
+#include <memory>
 #include <experimental/optional>
 
 using std::experimental::optional;

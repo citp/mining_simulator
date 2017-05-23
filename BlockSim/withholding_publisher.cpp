@@ -11,6 +11,7 @@
 #include "blockchain.hpp"
 
 #include <assert.h>
+#include <algorithm>
 
 
 std::vector<std::unique_ptr<Block>> WithholdingPublisher::publishBlocks(const Blockchain &blockchain, const Miner &me, std::vector<std::unique_ptr<Block>> &unpublishedBlocks) {

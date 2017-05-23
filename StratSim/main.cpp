@@ -7,21 +7,22 @@
 //
 
 
-#include "block.hpp"
-#include "blockchain.hpp"
-#include "minerStrategies.h"
-#include "logging.h"
-#include "game.hpp"
-#include "minerGroup.hpp"
-#include "miner_result.hpp"
-#include "game_result.hpp"
-#include "typeDefs.hpp"
-#include "multiplicative_weights_learning_model.hpp"
-#include "exp3_learning_model.hpp"
-#include "learning_strategy.hpp"
-#include "miner.hpp"
+#include "BlockSim/block.hpp"
+#include "BlockSim/blockchain.hpp"
+#include "BlockSim/minerStrategies.h"
+#include "BlockSim/logging.h"
+#include "BlockSim/game.hpp"
+#include "BlockSim/minerGroup.hpp"
+#include "BlockSim/miner_result.hpp"
+#include "BlockSim/game_result.hpp"
+#include "BlockSim/typeDefs.hpp"
+#include "BlockSim/multiplicative_weights_learning_model.hpp"
+#include "BlockSim/exp3_learning_model.hpp"
+#include "BlockSim/learning_strategy.hpp"
+#include "BlockSim/miner.hpp"
 
 #include <iostream>
+#include <math.h>
 
 //--more representative of smaller miners, where the chance that you mine the
 //next block is ~0 (not to be confused with the strategy selfish mining)

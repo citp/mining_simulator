@@ -8,6 +8,8 @@
 #if !defined(ARITHMETIC_TYPE_DETAIL_RETURNS_HPP_)
 #define ARITHMETIC_TYPE_DETAIL_RETURNS_HPP_
 
+#include <utility>
+
 /// \brief RETURNS() is used to avoid writing boilerplate
 /// "->decltype(x) { return x; }" phrases.
 //

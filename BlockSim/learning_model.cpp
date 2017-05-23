@@ -16,6 +16,7 @@
 #include "miner_result.hpp"
 #include "block.hpp"
 
+#include <algorithm>
 #include <sstream>
 #include <fstream>
 #include <random>

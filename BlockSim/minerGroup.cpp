@@ -15,6 +15,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <limits>
 
 constexpr auto maxTime = BlockTime(std::numeric_limits<BlockTime>::max());
 

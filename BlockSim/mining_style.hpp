@@ -12,6 +12,7 @@
 #include "typeDefs.hpp"
 
 #include <functional>
+#include <memory>
 
 class Blockchain;
 class Miner;

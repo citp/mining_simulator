@@ -26,6 +26,7 @@
 #include <cmath>
 #include <map>
 #include <sstream>
+#include <limits>
 
 Miner::Miner(MinerParameters params_, const Strategy &strategy_) : strategy(strategy_), params(params_) { }
 
