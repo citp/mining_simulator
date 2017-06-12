@@ -11,6 +11,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <limits>
 
 constexpr auto timeMax = std::numeric_limits<TimeType>::max();
 

@@ -16,6 +16,7 @@
 
 #include <cmath>
 #include <assert.h>
+#include <algorithm>
 
 using std::placeholders::_1;
 using std::placeholders::_2;

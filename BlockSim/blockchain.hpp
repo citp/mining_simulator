@@ -12,6 +12,8 @@
 #include "typeDefs.hpp"
 
 #include <queue>
+#include <stddef.h>
+#include <memory>
 
 class Block;
 class GenesisBlock;

@@ -12,6 +12,7 @@
 #include "typeDefs.hpp"
 
 #include <vector>
+#include <memory>
 
 class Block;
 class Blockchain;

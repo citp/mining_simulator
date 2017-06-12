@@ -14,6 +14,8 @@
 #include <cassert>
 #include <unordered_set>
 #include <iostream>
+#include <limits>
+#include <random>
 
 Blockchain::Blockchain(BlockchainSettings blockchainSettings) :
     valueNetworkTotal(0),

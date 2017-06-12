@@ -6,19 +6,19 @@
 //  Copyright © 2016 Harry Kalodner. All rights reserved.
 //
 
-#include "strategy.hpp"
-#include "utils.hpp"
-#include "miner.hpp"
-#include "block.hpp"
-#include "blockchain.hpp"
-#include "minerStrategies.h"
-#include "logging.h"
-#include "game.hpp"
-#include "minerGroup.hpp"
-#include "minerStrategies.h"
-#include "game_result.hpp"
-#include "miner_result.hpp"
-#include "mining_style.hpp"
+#include "BlockSim/strategy.hpp"
+#include "BlockSim/utils.hpp"
+#include "BlockSim/miner.hpp"
+#include "BlockSim/block.hpp"
+#include "BlockSim/blockchain.hpp"
+#include "BlockSim/minerStrategies.h"
+#include "BlockSim/logging.h"
+#include "BlockSim/game.hpp"
+#include "BlockSim/minerGroup.hpp"
+#include "BlockSim/minerStrategies.h"
+#include "BlockSim/game_result.hpp"
+#include "BlockSim/miner_result.hpp"
+#include "BlockSim/mining_style.hpp"
 
 #include <cassert>
 #include <iostream>

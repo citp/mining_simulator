@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <vector>
 #include <map>
+#include <memory>
 
 struct GameResult;
 class LearningStrategy;

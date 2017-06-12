@@ -14,6 +14,7 @@
 #include <vector>
 #include <set>
 #include <unordered_set>
+#include <memory>
 
 class Miner;
 class Blockchain;
