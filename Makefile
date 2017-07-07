@@ -1,5 +1,5 @@
-CC := g++
-CFLAGS := -std=c++1y -Wall -g
+CPP := g++
+CPPFLAGS := -std=c++14 -Wall -g
 
 LIB := -L./
 INC := -I./
@@ -9,16 +9,19 @@ LDLIBS := -lgsl -lcblas
 SRCS := $(wildcard BlockSim/*.cpp)
 OBJS := $(patsubst %.cpp,%.o,$(SRCS))
 
+STRAT_SRCS := $(wildcard StratSim/*.cpp)
+STRAT_OBJS := $(patsubst %.cpp,%.o,$(STRAT_SRCS))
+
 all: strat selfish
 
-strat: StratSim/main.cpp $(OBJS)
-	$(CC) $(INC) $(LDLIBS) -o $@ $^
+strat: $(STRAT_SRCS) $(OBJS)
+	$(CPP) $(CPPFLAGS) $(INC) $(LDLIBS) -o $@ $^
 
 selfish: SelfishSim/main.cpp $(OBJS)
-	$(CC) $(INC) $(LDLIBS) -o $@ $^
+	$(CPP) $(CPPFLAGS) $(INC) $(LDLIBS) -o $@ $^
 
 %.o: %.cpp
-	$(CC) $(CFLAGS) $(INC) -o $@ -c $<
+	$(CPP) $(CPPFLAGS) $(INC) -o $@ -c $<
 
 clean:
 	rm -rf BlockSim/*.o *.o strat selfish

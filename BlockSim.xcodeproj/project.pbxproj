@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		57151B081D11A7250044E18D /* typeDefs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 57151B061D11A7250044E18D /* typeDefs.cpp */; };
 		57151B091D11A7250044E18D /* typeDefs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 57151B061D11A7250044E18D /* typeDefs.cpp */; };
-		571A65AC1DBF924A00762D40 /* learning_strategy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 571A65AA1DBF924A00762D40 /* learning_strategy.cpp */; };
 		57467E8E1D26F66F00AA6D27 /* game_result.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 57467E8C1D26F66F00AA6D27 /* game_result.cpp */; };
 		57467E8F1D26F66F00AA6D27 /* game_result.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 57467E8C1D26F66F00AA6D27 /* game_result.cpp */; };
 		576CFAC91D0CF41B00360E74 /* withholding_publisher.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 576CFAC71D0CF41B00360E74 /* withholding_publisher.cpp */; };
@@ -32,6 +31,10 @@
 		57B93AD61DC0F50100264FF8 /* blockchain_settings.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 57B93AD31DC0F50100264FF8 /* blockchain_settings.cpp */; };
 		57D809111DCD03C80057B285 /* function_fork_selfish_miner.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 57D8090F1DCD03C70057B285 /* function_fork_selfish_miner.cpp */; };
 		57D809121DCD03C80057B285 /* function_fork_selfish_miner.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 57D8090F1DCD03C70057B285 /* function_fork_selfish_miner.cpp */; };
+		57D90FE41F1014BD003DA9C6 /* exp3_learning_model.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 57D90FDB1F1014BD003DA9C6 /* exp3_learning_model.cpp */; };
+		57D90FE51F1014BD003DA9C6 /* learning_model.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 57D90FDD1F1014BD003DA9C6 /* learning_model.cpp */; };
+		57D90FE61F1014BD003DA9C6 /* learning_strategy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 57D90FDF1F1014BD003DA9C6 /* learning_strategy.cpp */; };
+		57D90FE81F1014BD003DA9C6 /* multiplicative_weights_learning_model.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 57D90FE21F1014BD003DA9C6 /* multiplicative_weights_learning_model.cpp */; };
 		57DCB2581D067A9B006C59E0 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 57DCB2571D067A9B006C59E0 /* main.cpp */; };
 		57DCB25C1D067B79006C59E0 /* strategy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 57094E4E1CFE1B920040EF6F /* strategy.cpp */; };
 		57DCB25D1D067B79006C59E0 /* utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 57EB9B1B1CF68031001244AF /* utils.cpp */; };
@@ -62,9 +65,6 @@
 		57DCB2861D067D9F006C59E0 /* block.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 57EB9B0B1CF663B1001244AF /* block.cpp */; };
 		57DCB2871D067D9F006C59E0 /* blockchain.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 57EB9B0E1CF6667B001244AF /* blockchain.cpp */; };
 		57DCB2891D067D9F006C59E0 /* game.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 57DCB26B1D067BC9006C59E0 /* game.cpp */; };
-		57EF09261DBDC22500C31A35 /* learning_model.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 57EF09241DBDC22500C31A35 /* learning_model.cpp */; };
-		57EF09291DBDC33800C31A35 /* exp3_learning_model.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 57EF09271DBDC33800C31A35 /* exp3_learning_model.cpp */; };
-		57EF092C1DBDC77100C31A35 /* multiplicative_weights_learning_model.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 57EF092A1DBDC77100C31A35 /* multiplicative_weights_learning_model.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -93,8 +93,6 @@
 		57094E4F1CFE1B920040EF6F /* strategy.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = strategy.hpp; sourceTree = "<group>"; };
 		57151B061D11A7250044E18D /* typeDefs.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = typeDefs.cpp; sourceTree = "<group>"; };
 		57151B071D11A7250044E18D /* typeDefs.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = typeDefs.hpp; sourceTree = "<group>"; };
-		571A65AA1DBF924A00762D40 /* learning_strategy.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = learning_strategy.cpp; sourceTree = "<group>"; };
-		571A65AB1DBF924A00762D40 /* learning_strategy.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = learning_strategy.hpp; sourceTree = "<group>"; };
 		57467E8C1D26F66F00AA6D27 /* game_result.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = game_result.cpp; sourceTree = "<group>"; };
 		57467E8D1D26F66F00AA6D27 /* game_result.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = game_result.hpp; sourceTree = "<group>"; };
 		576CFAC71D0CF41B00360E74 /* withholding_publisher.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = withholding_publisher.cpp; sourceTree = "<group>"; };
@@ -117,6 +115,17 @@
 		57B93AD41DC0F50100264FF8 /* blockchain_settings.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = blockchain_settings.hpp; sourceTree = "<group>"; };
 		57D8090F1DCD03C70057B285 /* function_fork_selfish_miner.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = function_fork_selfish_miner.cpp; sourceTree = "<group>"; };
 		57D809101DCD03C80057B285 /* function_fork_selfish_miner.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = function_fork_selfish_miner.hpp; sourceTree = "<group>"; };
+		57D90FDB1F1014BD003DA9C6 /* exp3_learning_model.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = exp3_learning_model.cpp; path = StratSim/exp3_learning_model.cpp; sourceTree = SOURCE_ROOT; };
+		57D90FDC1F1014BD003DA9C6 /* exp3_learning_model.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = exp3_learning_model.hpp; path = StratSim/exp3_learning_model.hpp; sourceTree = SOURCE_ROOT; };
+		57D90FDD1F1014BD003DA9C6 /* learning_model.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = learning_model.cpp; path = StratSim/learning_model.cpp; sourceTree = SOURCE_ROOT; };
+		57D90FDE1F1014BD003DA9C6 /* learning_model.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = learning_model.hpp; path = StratSim/learning_model.hpp; sourceTree = SOURCE_ROOT; };
+		57D90FDF1F1014BD003DA9C6 /* learning_strategy.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = learning_strategy.cpp; path = StratSim/learning_strategy.cpp; sourceTree = SOURCE_ROOT; };
+		57D90FE01F1014BD003DA9C6 /* learning_strategy.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = learning_strategy.hpp; path = StratSim/learning_strategy.hpp; sourceTree = SOURCE_ROOT; };
+		57D90FE21F1014BD003DA9C6 /* multiplicative_weights_learning_model.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = multiplicative_weights_learning_model.cpp; path = StratSim/multiplicative_weights_learning_model.cpp; sourceTree = SOURCE_ROOT; };
+		57D90FE31F1014BD003DA9C6 /* multiplicative_weights_learning_model.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = multiplicative_weights_learning_model.hpp; path = StratSim/multiplicative_weights_learning_model.hpp; sourceTree = SOURCE_ROOT; };
+		57D90FEF1F1017A5003DA9C6 /* BlockSim.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = BlockSim.hpp; sourceTree = "<group>"; };
+		57D90FF11F1017A5003DA9C6 /* BlockSimPriv.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = BlockSimPriv.hpp; sourceTree = "<group>"; };
+		57D90FF31F1017A5003DA9C6 /* BlockSim.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = BlockSim.cpp; sourceTree = "<group>"; };
 		57DCB2481D060290006C59E0 /* logging.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = logging.h; sourceTree = "<group>"; };
 		57DCB2491D060725006C59E0 /* clever_selfish_miner.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = clever_selfish_miner.cpp; sourceTree = "<group>"; };
 		57DCB24A1D060725006C59E0 /* clever_selfish_miner.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = clever_selfish_miner.hpp; sourceTree = "<group>"; };
@@ -151,12 +160,6 @@
 		57EB9B2B1CF69F02001244AF /* gap_miner.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = gap_miner.cpp; sourceTree = "<group>"; };
 		57EB9B2C1CF69F02001244AF /* gap_miner.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = gap_miner.hpp; sourceTree = "<group>"; };
 		57EB9B2E1CF6A636001244AF /* minerStrategies.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = minerStrategies.h; sourceTree = "<group>"; };
-		57EF09241DBDC22500C31A35 /* learning_model.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = learning_model.cpp; sourceTree = "<group>"; };
-		57EF09251DBDC22500C31A35 /* learning_model.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = learning_model.hpp; sourceTree = "<group>"; };
-		57EF09271DBDC33800C31A35 /* exp3_learning_model.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = exp3_learning_model.cpp; sourceTree = "<group>"; };
-		57EF09281DBDC33800C31A35 /* exp3_learning_model.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = exp3_learning_model.hpp; sourceTree = "<group>"; };
-		57EF092A1DBDC77100C31A35 /* multiplicative_weights_learning_model.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = multiplicative_weights_learning_model.cpp; sourceTree = "<group>"; };
-		57EF092B1DBDC77100C31A35 /* multiplicative_weights_learning_model.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = multiplicative_weights_learning_model.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -203,6 +206,16 @@
 			name = "Abstract Mining Styles";
 			sourceTree = "<group>";
 		};
+		57D90FEE1F1017A5003DA9C6 /* BlockSim */ = {
+			isa = PBXGroup;
+			children = (
+				57D90FEF1F1017A5003DA9C6 /* BlockSim.hpp */,
+				57D90FF11F1017A5003DA9C6 /* BlockSimPriv.hpp */,
+				57D90FF31F1017A5003DA9C6 /* BlockSim.cpp */,
+			);
+			path = BlockSim;
+			sourceTree = "<group>";
+		};
 		57DCB2561D067A9B006C59E0 /* StratSim */ = {
 			isa = PBXGroup;
 			children = (
@@ -226,6 +239,7 @@
 				57EB9AFF1CF6436C001244AF /* BlockSim */,
 				57DCB2561D067A9B006C59E0 /* StratSim */,
 				57DCB2741D067D37006C59E0 /* SelfishSim */,
+				57D90FEE1F1017A5003DA9C6 /* BlockSim */,
 				57EB9AFE1CF6436C001244AF /* Products */,
 			);
 			sourceTree = "<group>";
@@ -303,14 +317,14 @@
 		57EF092D1DBE454900C31A35 /* Learning Model */ = {
 			isa = PBXGroup;
 			children = (
-				571A65AB1DBF924A00762D40 /* learning_strategy.hpp */,
-				571A65AA1DBF924A00762D40 /* learning_strategy.cpp */,
-				57EF09251DBDC22500C31A35 /* learning_model.hpp */,
-				57EF09241DBDC22500C31A35 /* learning_model.cpp */,
-				57EF09281DBDC33800C31A35 /* exp3_learning_model.hpp */,
-				57EF09271DBDC33800C31A35 /* exp3_learning_model.cpp */,
-				57EF092B1DBDC77100C31A35 /* multiplicative_weights_learning_model.hpp */,
-				57EF092A1DBDC77100C31A35 /* multiplicative_weights_learning_model.cpp */,
+				57D90FDB1F1014BD003DA9C6 /* exp3_learning_model.cpp */,
+				57D90FDC1F1014BD003DA9C6 /* exp3_learning_model.hpp */,
+				57D90FDD1F1014BD003DA9C6 /* learning_model.cpp */,
+				57D90FDE1F1014BD003DA9C6 /* learning_model.hpp */,
+				57D90FDF1F1014BD003DA9C6 /* learning_strategy.cpp */,
+				57D90FE01F1014BD003DA9C6 /* learning_strategy.hpp */,
+				57D90FE21F1014BD003DA9C6 /* multiplicative_weights_learning_model.cpp */,
+				57D90FE31F1014BD003DA9C6 /* multiplicative_weights_learning_model.hpp */,
 			);
 			name = "Learning Model";
 			path = ../BlockSim;
@@ -400,10 +414,11 @@
 				57DCB2601D067B79006C59E0 /* petty_miner.cpp in Sources */,
 				57467E8E1D26F66F00AA6D27 /* game_result.cpp in Sources */,
 				57B93AD51DC0F50100264FF8 /* blockchain_settings.cpp in Sources */,
+				57D90FE41F1014BD003DA9C6 /* exp3_learning_model.cpp in Sources */,
 				57DCB2611D067B79006C59E0 /* function_fork_miner.cpp in Sources */,
 				57DCB2621D067B79006C59E0 /* lazy_fork_miner.cpp in Sources */,
-				571A65AC1DBF924A00762D40 /* learning_strategy.cpp in Sources */,
 				57DCB2641D067B79006C59E0 /* gap_miner.cpp in Sources */,
+				57D90FE51F1014BD003DA9C6 /* learning_model.cpp in Sources */,
 				576CFAD31D0D00AC00360E74 /* mining_style.cpp in Sources */,
 				576CFADB1D0D1EB500360E74 /* picky_mining_style.cpp in Sources */,
 				57DCB2651D067B79006C59E0 /* default_selfish_miner.cpp in Sources */,
@@ -413,17 +428,16 @@
 				57DCB2671D067B79006C59E0 /* clever_selfish_miner.cpp in Sources */,
 				57B9327B1D0CF1E6005D2F69 /* publishing_strategy.cpp in Sources */,
 				576CFACD1D0CF94500360E74 /* simple_publisher.cpp in Sources */,
-				57EF09291DBDC33800C31A35 /* exp3_learning_model.cpp in Sources */,
 				57DCB2681D067B79006C59E0 /* block.cpp in Sources */,
 				57151B081D11A7250044E18D /* typeDefs.cpp in Sources */,
 				57B9326F1D09FAE3005D2F69 /* minerGroup.cpp in Sources */,
+				57D90FE61F1014BD003DA9C6 /* learning_strategy.cpp in Sources */,
 				57DCB2691D067B79006C59E0 /* blockchain.cpp in Sources */,
-				57EF09261DBDC22500C31A35 /* learning_model.cpp in Sources */,
 				5790259D1D15E126002DDF46 /* miner_result.cpp in Sources */,
 				57DCB26E1D067BC9006C59E0 /* game.cpp in Sources */,
 				576CFAD71D0D029000360E74 /* simple_mining_style.cpp in Sources */,
 				57DCB2581D067A9B006C59E0 /* main.cpp in Sources */,
-				57EF092C1DBDC77100C31A35 /* multiplicative_weights_learning_model.cpp in Sources */,
+				57D90FE81F1014BD003DA9C6 /* multiplicative_weights_learning_model.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -467,11 +481,6 @@
 		57DCB25A1D067A9B006C59E0 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				HEADER_SEARCH_PATHS = (
-					/usr/local/include,
-					/usr/local/include/boost,
-					/Users/hkalodner/Dropbox/Projects/BlockSim/BlockSim,
-				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					/usr/local/Cellar/boost/1.60.0_1/lib,
@@ -483,11 +492,6 @@
 		57DCB25B1D067A9B006C59E0 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				HEADER_SEARCH_PATHS = (
-					/usr/local/include,
-					/usr/local/include/boost,
-					/Users/hkalodner/Dropbox/Projects/BlockSim/BlockSim,
-				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					/usr/local/Cellar/boost/1.60.0_1/lib,
@@ -582,7 +586,10 @@
 				GCC_WARN_UNUSED_LABEL = YES;
 				GCC_WARN_UNUSED_PARAMETER = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = /usr/local/include;
+				HEADER_SEARCH_PATHS = (
+					/usr/local/include,
+					.,
+				);
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				MTL_ENABLE_DEBUG_INFO = YES;
@@ -668,7 +675,10 @@
 				GCC_WARN_UNUSED_LABEL = YES;
 				GCC_WARN_UNUSED_PARAMETER = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = /usr/local/include;
+				HEADER_SEARCH_PATHS = (
+					/usr/local/include,
+					.,
+				);
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				MTL_ENABLE_DEBUG_INFO = NO;

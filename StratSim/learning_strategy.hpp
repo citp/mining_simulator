@@ -9,8 +9,8 @@
 #ifndef learning_strategy_hpp
 #define learning_strategy_hpp
 
-#include "strategy.hpp"
-#include "typeDefs.hpp"
+#include "BlockSim/strategy.hpp"
+#include "BlockSim/typeDefs.hpp"
 
 #include <stdio.h>
 

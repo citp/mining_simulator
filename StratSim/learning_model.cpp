@@ -7,14 +7,16 @@
 //
 
 #include "learning_model.hpp"
+
+#include "BlockSim/strategy.hpp"
+#include "BlockSim/publishing_strategy.hpp"
+#include "BlockSim/miner.hpp"
+#include "BlockSim/utils.hpp"
+#include "BlockSim/game_result.hpp"
+#include "BlockSim/miner_result.hpp"
+#include "BlockSim/block.hpp"
+
 #include "learning_strategy.hpp"
-#include "strategy.hpp"
-#include "publishing_strategy.hpp"
-#include "miner.hpp"
-#include "utils.hpp"
-#include "game_result.hpp"
-#include "miner_result.hpp"
-#include "block.hpp"
 
 #include <algorithm>
 #include <sstream>

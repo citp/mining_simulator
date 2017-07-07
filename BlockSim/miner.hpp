@@ -13,11 +13,6 @@
 
 #include <queue>
 #include <memory>
-#include <experimental/optional>
-
-using std::experimental::optional;
-using std::experimental::make_optional;
-using std::experimental::nullopt;
 
 class Block;
 class Blockchain;

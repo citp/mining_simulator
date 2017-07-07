@@ -8,7 +8,7 @@
 
 #include "multiplicative_weights_learning_model.hpp"
 
-#include "utils.hpp"
+#include "BlockSim/utils.hpp"
 #include "learning_strategy.hpp"
 
 #include <assert.h>

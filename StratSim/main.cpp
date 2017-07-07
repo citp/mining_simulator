@@ -16,10 +16,11 @@
 #include "BlockSim/miner_result.hpp"
 #include "BlockSim/game_result.hpp"
 #include "BlockSim/typeDefs.hpp"
-#include "BlockSim/multiplicative_weights_learning_model.hpp"
-#include "BlockSim/exp3_learning_model.hpp"
-#include "BlockSim/learning_strategy.hpp"
 #include "BlockSim/miner.hpp"
+
+#include "multiplicative_weights_learning_model.hpp"
+#include "exp3_learning_model.hpp"
+#include "learning_strategy.hpp"
 
 #include <iostream>
 #include <math.h>

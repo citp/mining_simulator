@@ -9,7 +9,7 @@
 #ifndef learning_model_hpp
 #define learning_model_hpp
 
-#include "typeDefs.hpp"
+#include "BlockSim/typeDefs.hpp"
 
 #include <stdio.h>
 #include <vector>

@@ -9,7 +9,8 @@
 #include "exp3_learning_model.hpp"
 
 #include "learning_strategy.hpp"
-#include "utils.hpp"
+
+#include "BlockSim/utils.hpp"
 
 #include <math.h>
 #include <assert.h>
