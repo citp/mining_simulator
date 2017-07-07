@@ -21,7 +21,7 @@ cross-platform manner.
 Usage
 -----------
 
-main.cpp inside of the SelfishSim folder is the main code example
+main.cpp inside of the StratSim folder is the main code example
 for usage of this simulator.
 
 The code is generally designed around the idea of mining strategies. Each
@@ -32,6 +32,18 @@ reward and transaction fee accumulation rate.
 
 In the future we will release more documentation and code examples for usage
 of this software.
+
+Output of Example Code
+------------------------
+StratSim produces a folder which includes a file for each miner that is competing
+to mine blocks. This simulation works by running a series of simulations where
+miners choose to use the strategy that they believe to be most effection. Each
+output file gives a list of the percentage of miners who used the given strategy
+in each round.
+
+SelfishSim evalutates the effectiveness of the selfish mining strategy. It
+produces a single file which contains the percentage profit earned by the
+selfish miner given the percentage of hash power which is controls. 
 
 Disclaimer
 -----------
