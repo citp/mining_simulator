@@ -37,13 +37,14 @@ Output of Example Code
 ------------------------
 StratSim produces a folder which includes a file for each miner that is competing
 to mine blocks. This simulation works by running a series of simulations where
-miners choose to use the strategy that they believe to be most effection. Each
+miners choose to use the strategy that they believe to be most effective. Each
 output file gives a list of the percentage of miners who used the given strategy
-in each round.
+in each round. This demonstrates the idea that miners will either all converge to
+an optimal strategy or oscillate between strategies when there is no equilibrium.
 
 SelfishSim evalutates the effectiveness of the selfish mining strategy. It
 produces a single file which contains the percentage profit earned by the
-selfish miner given the percentage of hash power which is controls. 
+selfish miner given the percentage of hash power which it controls. 
 
 Disclaimer
 -----------
