@@ -4,8 +4,6 @@ CPPFLAGS := -std=c++14 -Wall -g
 LIB := -L./
 INC := -I./
 
-LDLIBS := -lgsl -lcblas
-
 SRCS := $(wildcard BlockSim/*.cpp)
 OBJS := $(patsubst %.cpp,%.o,$(SRCS))
 
@@ -14,11 +12,11 @@ STRAT_OBJS := $(patsubst %.cpp,%.o,$(STRAT_SRCS))
 
 all: strat selfish
 
-strat: $(STRAT_SRCS) $(OBJS)
-	$(CPP) $(CPPFLAGS) $(INC) $(LDLIBS) -o $@ $^
+strat: $(STRAT_SRCS) $(OBJS) 
+	$(CPP) $(CPPFLAGS) `gsl-config --cflags` $(INC) -o $@ $^ `gsl-config --libs`
 
 selfish: SelfishSim/main.cpp $(OBJS)
-	$(CPP) $(CPPFLAGS) $(INC) $(LDLIBS) -o $@ $^
+	$(CPP) $(CPPFLAGS) `gsl-config --cflags` $(INC) -o $@ $^ `gsl-config --libs`
 
 %.o: %.cpp
 	$(CPP) $(CPPFLAGS) $(INC) -o $@ -c $<
